@@ -52,6 +52,7 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->maxContentWidth('8xl')
             ->authMiddleware([
                 Authenticate::class,
             ]);
