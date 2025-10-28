@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a3f8b591fc31390651e9f0425c0d9f8a",
+    "content-hash": "b63588cca4e679ad9c80994adc5b3797",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -71,6 +71,89 @@
                 "source": "https://github.com/AnourValar/eloquent-serialize/tree/1.3.4"
             },
             "time": "2025-07-30T15:45:57+00:00"
+        },
+        {
+            "name": "asmit/advanced-kanban",
+            "version": "1.1.9",
+            "dist": {
+                "type": "zip",
+                "url": "https://filament-advanced-kanban.composer.sh/download/a0389e25-9790-4bff-b9b8-669b207184b0/filament-advanced-kanban-1.1.9.zip",
+                "reference": "011e50b0768f0a5fb49e2d0154b0086f12e900d7",
+                "shasum": "68ec657b1e3e8694014d61536c6b37c37f0ea034"
+            },
+            "require": {
+                "filament/support": "^4.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "phpunit/phpunit": "^10.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Asmit\\AdvancedKanban\\AdvancedKanbanServiceProvider"
+                    ]
+                },
+                "support": {
+                    "docs": "https://docs.asmitnepali.com/advanced-kanban",
+                    "email": "support@asmitnepali.com"
+                },
+                "commercial": true,
+                "purchase-url": "https://asmitnepali.com/advanced-kanban"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Asmit\\AdvancedKanban\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Asmit\\AdvancedKanban\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "pint": [
+                    "pint"
+                ],
+                "stan": [
+                    "phpstan analyse"
+                ],
+                "test": [
+                    "phpunit"
+                ],
+                "pint-test": [
+                    "pint --test"
+                ],
+                "test-coverage": [
+                    "phpunit --coverage-html coverage"
+                ]
+            },
+            "license": [
+                "proprietary"
+            ],
+            "authors": [
+                {
+                    "name": "AsmitNepali",
+                    "role": "Developer",
+                    "email": "mail2asmitnepali@gmail.com",
+                    "homepage": "https://github.com/asmitnepali"
+                }
+            ],
+            "description": "A powerful and flexible premium Kanban board plugin for Filament 3.x with drag-and-drop functionality, workflow transitions, search, filtering, and custom actions.",
+            "keywords": [
+                "admin-panel",
+                "commercial",
+                "drag-drop",
+                "filament",
+                "kanban",
+                "laravel",
+                "premium",
+                "task-management",
+                "workflow"
+            ],
+            "time": "2025-10-28T11:21:25+00:00"
         },
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -11635,7 +11718,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
