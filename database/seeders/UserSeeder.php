@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -11,8 +12,9 @@ class UserSeeder extends Seeder
     {
         // Default admin/test user
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Kanban Admin',
+            'email' => 'advanced@kanban.com',
+            'password' => Hash::make('demo.advancedkanban!2025'),
         ]);
 
         // Additional random users
