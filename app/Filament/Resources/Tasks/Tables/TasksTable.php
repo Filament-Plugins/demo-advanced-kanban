@@ -18,26 +18,20 @@ class TasksTable
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('status')
+                    ->badge()
                     ->searchable(),
                 TextColumn::make('priority')
+                    ->badge()
                     ->searchable(),
                 TextColumn::make('due_date')
                     ->date()
                     ->sortable(),
-                TextColumn::make('project_id')
+                TextColumn::make('project.name')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('assigned_to')
+                TextColumn::make('assignedTo.name')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //

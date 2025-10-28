@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources\Projects\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class ProjectForm
@@ -12,13 +15,22 @@ class ProjectForm
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->required(),
-                Textarea::make('description')
-                    ->columnSpanFull(),
-                TextInput::make('owner_id')
-                    ->required()
-                    ->numeric(),
+                Section::make()
+                ->schema([
+                    Group::make([
+                        TextInput::make('name')
+                            ->required(),
+                        Select::make('owner_id')
+                            ->relationship('owner', 'name')
+                            ->preload()
+                            ->searchable()
+                            ->required(),
+                    ])->columns(),
+                    Textarea::make('description')
+                        ->columnSpanFull(),
+
+                ])
+                ->columnSpanFull()
             ]);
     }
 }
