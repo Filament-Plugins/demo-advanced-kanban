@@ -25,20 +25,30 @@
         </div>
     </div>
 
-    @if($record->{$this->getKanban()->getDescriptionField()})
+    <div wire:click="mountAction('viewAction', {recordId: {{ $record->id }} })">
+        @if($record->{$this->getKanban()->getDescriptionField()})
         <p class="kanban-item-description">
             {{ Str::limit($record->{$this->getKanban()->getDescriptionField()}, 80) }}
         </p>
-
+       <div>
+           <x-filament::badge
+               size="sm"
+               :color="$record->priority->getColor()"
+               :icon="$record->priority->getIcon()"
+           >
+               {{ $record->priority->getLabel() }}
+           </x-filament::badge>
+       </div>
         <div class="flex items-center justify-between gap-2 mt-2 w-full">
             @if($name = $record->assignedTo?->name)
                 <div class="flex items-center gap-2">
                     <x-filament::avatar
                         :size="Size::Small->value"
-                        src="https://i.pravatar.cc/150?u={{ $name }}"
+                        src="https://api.dicebear.com/9.x/adventurer/svg?seed={{ $name }}"
                         alt="Advanced Kanban"
                     />
-                    <span class="text-xs">{{ $name }}</span></div>
+                    <span class="text-xs">{{ $name }}</span>
+                </div>
             @else
                 <div class="kanban-item-footer">
                     @if($lockedColumn->isCardLocked)
@@ -58,8 +68,9 @@
                     :size="IconSize::Small"
                     class="text-zinc-500"
                 />
-                <span class="text-xs">{{ $record->created_at->format('M d, Y') }}</span>
+                <span class="text-xs">{{ $record->due_date?->format('M d, Y') }}</span>
             </div>
         </div>
     @endif
+    </div>
 </div>
