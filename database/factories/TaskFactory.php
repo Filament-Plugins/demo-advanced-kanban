@@ -21,7 +21,7 @@ class TaskFactory extends Factory
             'description' => $this->faker->optional()->paragraphs(2, true),
             'status' => $status,
             'priority' => $this->faker->randomElement(['low', 'medium', 'high']),
-            'due_date' => $this->faker->optional()->dateTimeBetween('now', '+3 months')?->format('Y-m-d'),
+            'due_date' => $this->faker->dateTimeBetween('now', '+3 months'),
             'project_id' => Project::factory(),
             'assigned_to' => $this->faker->optional()->boolean(80) ? User::factory() : null,
             'created_at' => Carbon::now(),

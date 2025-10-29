@@ -18,6 +18,7 @@ use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -185,4 +186,47 @@ class KanbanTask extends KanbanPage
             ->icon(Heroicon::ListBullet)
         ];
     }
+
+    public function viewAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('view')
+            ->label('Task Details')
+            ->slideOver()
+            ->record(fn(array $arguments) => Task::query()->with(['project', 'assignedTo'])->find($arguments['recordId']))
+            ->modalSubmitAction(false)
+            ->schema(function ($record) {
+                return [
+                    TextEntry::make('Title')
+                        ->default($record->title),
+
+                    TextEntry::make('Description')
+                        ->default($record->description),
+
+                    TextEntry::make('status')
+                        ->badge()
+                        ->icon($record->status->getIcon())
+                        ->color($record->status->getColor())
+                        ->default($record->status->getLabel()),
+
+                    TextEntry::make('priority')
+                        ->badge()
+                        ->icon($record->priority->getIcon())
+                        ->color($record->priority->getColor())
+                        ->default($record->priority->getLabel()),
+
+                    TextEntry::make('Project')
+                        ->default($record->project->name),
+
+                    TextEntry::make('Assigned To')
+                        ->badge()
+                        ->default($record->assignedTo?->name ?? 'Unassigned'),
+
+                    TextEntry::make('due_date')
+                        ->default($record->due_date?->toFormattedDateString() ?? 'No due date'),
+
+
+                ];
+            });
+    }
+
 }
