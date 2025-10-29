@@ -37,8 +37,8 @@ class TaskSeeder extends Seeder
                         };
 
                         $dueDateDateTime = in_array($status, ['pending', 'in_progress', 'review'], true)
-                            ? fake()->optional(0.8)->dateTimeBetween('now', '+2 months')
-                            : fake()->optional(0.7)->dateTimeBetween('-2 months', 'now');
+                            ? fake()->dateTimeBetween('now', '+2 months')
+                            : fake()->dateTimeBetween('-2 months', 'now');
                         $dueDate = $dueDateDateTime?->format('Y-m-d');
 
                         $assignedTo = fake()->boolean($status === 'archived' ? 50 : 85)
