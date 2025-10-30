@@ -23,7 +23,7 @@ class Task extends Model
     ];
 
     protected $casts = [
-        'due_date' => 'datetime',
+        'due_date' => 'date',
         'priority' => Priority::class,
         'status' => TaskStatus::class
     ];
