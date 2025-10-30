@@ -36,6 +36,10 @@ class KanbanTask extends KanbanPage
 
     protected static ?string $navigationLabel = 'Tasks';
 
+    protected static bool $shouldPersistFilterInSession = true;
+
+    protected static bool $shouldPersistSearchInSession = true;
+
     public function getBreadcrumbs(): array
     {
         return [
