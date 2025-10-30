@@ -36,6 +36,10 @@ class KanbanTask extends KanbanPage
 
     protected static ?string $navigationLabel = 'Tasks';
 
+    protected static bool $shouldPersistFilterInSession = true;
+
+    protected static bool $shouldPersistSearchInSession = true;
+
     public function getBreadcrumbs(): array
     {
         return [
@@ -103,19 +107,10 @@ class KanbanTask extends KanbanPage
                     ->allowedTransitions(['pending'])
             ])
             ->recordActions([
-
                ActionGroup::make([
                    EditAction::make('edit')
                        ->model(Task::class)
-                       ->schema([
-                           Select::make('project_id')
-                               ->relationship('project', 'name'),
-                           TextInput::make('title')
-                               ->required()
-                               ->maxLength(255),
-                           Textarea::make('description')
-                               ->maxLength(65535)
-                       ]),
+                       ->schema(fn() => $this->taskForm(null)),
                    DeleteAction::make('delete')
                        ->icon(Heroicon::OutlinedTrash)
                        ->requiresConfirmation()
@@ -126,29 +121,7 @@ class KanbanTask extends KanbanPage
                 CreateAction::make()
                     ->model(Task::class)
                     ->schema(function(array $arguments): array {
-                        return [
-                            Select::make('status')
-                            ->options(TaskStatus::class)
-                            ->default($arguments['status']),
-
-                            Select::make('project_id')
-                                ->required()
-                                ->searchable()
-                                ->relationship('project','name'),
-
-                            TextInput::make('title')
-                                ->required()
-                                ->maxLength(255),
-
-                            Textarea::make('description')
-                                ->maxLength(65535)
-                                ->columnSpanFull(),
-
-                            Select::make('assigned_to')
-                                ->searchable()
-                                ->relationship('assignedTo','name')
-                                ->nullable(),
-                        ];
+                        return $this->taskForm($arguments['status']);
                     })
                 ->icon(Heroicon::OutlinedPlus)
                 ->hiddenLabel()
@@ -176,6 +149,37 @@ class KanbanTask extends KanbanPage
                 }
                 return $query;
             });
+    }
+
+    /**
+     * @param $status
+     * @return array
+     */
+    function taskForm($status): array
+    {
+        return [
+            Select::make('status')
+                ->options(TaskStatus::class)
+                ->default($status),
+
+            Select::make('project_id')
+                ->required()
+                ->searchable()
+                ->relationship('project', 'name'),
+
+            TextInput::make('title')
+                ->required()
+                ->maxLength(255),
+
+            Textarea::make('description')
+                ->maxLength(65535)
+                ->columnSpanFull(),
+
+            Select::make('assigned_to')
+                ->searchable()
+                ->relationship('assignedTo', 'name')
+                ->nullable(),
+        ];
     }
 
     protected function getHeaderActions(): array
