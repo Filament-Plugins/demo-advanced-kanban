@@ -37,6 +37,7 @@ class TaskForm
                     Group::make([
                         Select::make('project_id')
                             ->searchable()
+                            ->required()
                             ->relationship('project', 'name'),
                         Select::make('assigned_to')
                             ->searchable()

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b63588cca4e679ad9c80994adc5b3797",
+    "content-hash": "378e6ae9a54683b63711af7e1a6af6a2",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -74,12 +74,12 @@
         },
         {
             "name": "asmit/advanced-kanban",
-            "version": "1.1.10",
+            "version": "1.2.0",
             "dist": {
                 "type": "zip",
-                "url": "https://filament-advanced-kanban.composer.sh/download/a03d076a-610c-42d5-8b5e-3a4c938f64eb/filament-advanced-kanban-1.1.10.zip",
-                "reference": "8e4f8e4b2aeed2585ca649f3194f0bcc831bd2e0",
-                "shasum": "f3d3a5917613afb8d97a886f22551966635ecd98"
+                "url": "https://filament-advanced-kanban.composer.sh/download/a03ece81-87fe-49e6-8fde-001c0620bf43/filament-advanced-kanban-1.2.0.zip",
+                "reference": "dc0ccc6162f465b5508aec31a2439719d934e9fb",
+                "shasum": "4c0a8256e92642429fe0d14329b593704d9ab176"
             },
             "require": {
                 "filament/support": "^4.0",
@@ -153,7 +153,7 @@
                 "task-management",
                 "workflow"
             ],
-            "time": "2025-10-30T15:56:50+00:00"
+            "time": "2025-10-31T13:09:01+00:00"
         },
         {
             "name": "blade-ui-kit/blade-heroicons",
