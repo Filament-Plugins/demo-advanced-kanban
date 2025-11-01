@@ -11,6 +11,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Schemas\Components\Section;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -35,8 +36,11 @@ class ProjectsTable
                     ->button()
                     ->label('Filter'),
             )
-            ->recordUrl(fn (Project $record) => ProjectResource::getUrl('tasks', ['record' => $record]))
+            ->recordUrl(fn (Project $record) => ProjectResource::getUrl('tasks-kanban', ['record' => $record]))
             ->recordActions([
+                Action::make('kanban')
+                    ->url(fn (Project $record) => ProjectResource::getUrl('tasks-kanban', ['record' => $record]))
+                    ->icon(Heroicon::OutlinedSquares2x2),
                 ViewAction::make(),
                 EditAction::make(),
             ])
