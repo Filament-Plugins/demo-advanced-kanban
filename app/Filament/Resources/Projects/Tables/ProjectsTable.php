@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\Projects\Tables;
 
+use App\Filament\Resources\Projects\Pages\ManageProjectTasks;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\Project;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -32,6 +35,7 @@ class ProjectsTable
                     ->button()
                     ->label('Filter'),
             )
+            ->recordUrl(fn (Project $record) => ProjectResource::getUrl('tasks', ['record' => $record]))
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),

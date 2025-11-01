@@ -5,12 +5,16 @@ namespace App\Filament\Resources\Projects;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Resources\Projects\Pages\ManageProjectTasks;
+use App\Filament\Resources\Projects\Pages\ManageProjectTasksKanban;
 use App\Filament\Resources\Projects\Pages\ViewProject;
 use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Schemas\ProjectInfolist;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
 use App\Models\Project;
 use BackedEnum;
+use Filament\Pages\Enums\SubNavigationPosition;
+use Filament\Resources\Pages\Page;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -22,7 +26,9 @@ class ProjectResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
-    protected static bool $shouldRegisterNavigation  = false;
+    protected static bool $shouldRegisterNavigation = true;
+
+    protected static ?\Filament\Pages\Enums\SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Start;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -41,11 +47,16 @@ class ProjectResource extends Resource
         return ProjectsTable::configure($table);
     }
 
-    public static function getRelations(): array
+    /**
+     * @return array<mixed>
+     */
+    public static function getRecordSubNavigation(Page $page): array
     {
-        return [
-            //
-        ];
+        return $page->generateNavigationItems([
+            ViewProject::class,
+            ManageProjectTasks::class,
+            ManageProjectTasksKanban::class,
+        ]);
     }
 
     public static function getPages(): array
@@ -55,6 +66,8 @@ class ProjectResource extends Resource
             'create' => CreateProject::route('/create'),
             'view' => ViewProject::route('/{record}'),
             'edit' => EditProject::route('/{record}/edit'),
+            'tasks' => ManageProjectTasks::route('/{record}/tasks'),
+            'tasks-kanban' => ManageProjectTasksKanban::route('/{record}/tasks-kanban'),
         ];
     }
 }
