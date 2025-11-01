@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
+use App\Filament\Widgets\FeaturesWidget;
 use App\Filament\Widgets\KanbanLinkWidget;
 use Asmit\AdvancedKanban\KanbanBuilder;
 use Filament\Http\Middleware\Authenticate;
@@ -47,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 KanbanLinkWidget::class,
+                FeaturesWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
