@@ -77,6 +77,7 @@ class ManageProjectTasksKanban extends ManageRelatedRecords implements HasKanban
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->orderBy('created_at', 'desc'))
             ->searchableFields(['title', 'description'])
             ->enableLoadingIndicator()
+            ->enableFilterIndicator()
             ->columns([
                 KanbanColumn::make('pending')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
