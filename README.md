@@ -1,61 +1,131 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Advanced Kanban Demo Project
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> A **live demo** showcasing the powerful features of [Advanced Kanban](https://laravelplugins.com/filament/advanced-kanban/) - a premium Kanban board plugin for Filament 4.x
 
-## About Laravel
+## 🎯 About This Demo
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This is a fully functional demo application that demonstrates the capabilities of **Advanced Kanban**, a premium Kanban board plugin for Filament. You can explore all features in real-time to see how it works before purchasing.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **📖 Documentation**: [https://laravelplugins.com/filament/advanced-kanban/](https://laravelplugins.com/filament/advanced-kanban/)
+- **🎥 Demo Video**: [Watch on YouTube](https://www.youtube.com/watch?v=lqVxcOwHQAA)
+- **💰 Purchase**: [Buy Advanced Kanban](https://checkout.anystack.sh/filament-advanced-kanban)
+- **🔌 Filament Plugin Page**: [View on Filament](https://filamentphp.com/plugins/asmit-nepali-advanced-kanban)
+- **🌐 All Plugins**: [Laravel Plugins](https://laravelplugins.com/)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ✨ Features Showcased
 
-## Learning Laravel
+This demo highlights the following advanced features:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 🎨 Core Features
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Drag & Drop Interface**: Intuitive drag-and-drop functionality for moving records between columns
+- **Workflow Transitions**: Define allowed status transitions to control record movement  
+- **Real-time Search**: Search across multiple fields with debounced input
+- **Advanced Filtering**: Custom filter forms with multiple field types
+- **Pagination**: Load more records per column with infinite scroll
+- **Query Modifiers**: Fine-tune search queries with advanced filtering options
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 🚀 Advanced Capabilities
 
-## Laravel Sponsors
+- **Custom Card Components**: Rich, customizable card displays with badges, avatars, and metadata
+- **Column Header Actions**: Add new records directly from column headers
+- **Record Actions**: Edit, delete, and view actions on individual cards
+- **Card Locking**: Prevent specific cards from being moved based on conditions
+- **Session Persistence**: Filters and search are automatically saved in session
+- **Tab Filtering**: Filter records by status using tab navigation
+- **MRR (Manage Related Records)**: Full Kanban support for related records in Filament resources
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 📋 What's Included
 
-### Premium Partners
+This demo project includes:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Kanban Pages
 
-## Contributing
+1. **Tasks Kanban** (`/admin/kanban-task`)
+   - Standalone Kanban page with all features
+   - Tab filtering (All, Pending, In Progress)
+   - Custom card components with priority badges
+   - Advanced filtering by project, status, and priority
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+2. **Project Tasks Kanban** (`/admin/projects/{id}/tasks-kanban`)
+   - MRR Kanban for managing tasks within a project
+   - Same powerful features as standalone Kanban
+   - Automatically filters by parent project
 
-## Code of Conduct
+### List Views
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. **Project Tasks List** (`/admin/projects/{id}/tasks`)
+   - Traditional Filament table view
+   - Seamless switching between table and Kanban views
+   - Complete CRUD operations
 
-## Security Vulnerabilities
+### Demo Data
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Sample projects with various tasks
+- Different task statuses and priorities
+- Assigned users and due dates
+- Realistic data to showcase all features
 
-## License
+## 🎓 Explore the Features
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Workflow Transitions
+
+See how status transitions are controlled - some moves are allowed while others are restricted, ensuring data integrity.
+
+### Card Locking
+
+Unassigned tasks are locked in certain columns, preventing accidental moves until properly assigned.
+
+### Custom Components
+
+- **Card Component**: Displays task title, description, priority badge, assignee avatar, and due date
+- **Column Header**: Shows status icon, label, description, and record count badge
+
+### Advanced Filtering
+
+- Filter by project, status, and priority
+- Multiple selection support
+- Default filter values for quick views
+- Session persistence for better UX
+
+### Search & Pagination
+
+- Real-time search across title and description
+- Infinite scroll pagination
+- Load more records per column on demand
+
+## 🛠️ Technology Stack
+
+- **Framework**: Laravel 12.x
+- **Admin Panel**: Filament 4.x
+- **PHP**: 8.4+
+- **Frontend**: Tailwind CSS 4.x, Alpine.js
+- **Database**: SQLite (for demo purposes)
+
+## 🎯 Use Cases
+
+This demo shows how Advanced Kanban can be used for:
+
+- **Task Management**: Project and task tracking
+- **Workflow Management**: Status-based workflows with transitions
+- **Team Collaboration**: Assign tasks and track progress
+- **Priority Management**: Visual priority indicators
+- **Related Records**: Managing child records within parent resources
+
+## 📄 License
+
+This demo project is open source and available for educational purposes. The Advanced Kanban plugin itself is a premium plugin that requires a license for production use.
+
+---
+
+**Ready to build something amazing?** 
+
+- **💰 [Purchase Advanced Kanban](https://checkout.anystack.sh/filament-advanced-kanban)** - Start building powerful Kanban boards today!
+- **📖 [Read the Documentation](https://laravelplugins.com/filament/advanced-kanban/)** - Comprehensive guides and API reference
+- **🎥 [Watch the Demo Video](https://www.youtube.com/watch?v=lqVxcOwHQAA)** - See it in action
+
+Made with ❤️ by [Asmit Nepali](https://github.com/asmitnepali)
+
+---
+
+**Browse more plugins**: [Laravel Plugins](https://laravelplugins.com/) - A collection of powerful and flexible plugins for Filament

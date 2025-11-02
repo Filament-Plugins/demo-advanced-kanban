@@ -1,49 +1,54 @@
 <?php
 
-namespace App\Filament\Pages;
+namespace App\Filament\Resources\Projects\Pages;
 
 use App\Enums\Priority;
 use App\Enums\TaskStatus;
-use App\Filament\Resources\Tasks\Pages\ListTasks;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Task;
 use Asmit\AdvancedKanban\Actions\ActionGroup;
 use Asmit\AdvancedKanban\Columns\KanbanColumn;
+use Asmit\AdvancedKanban\Concerns\HasKanbanRelatedRecords;
+use Asmit\AdvancedKanban\Contracts\HasKanban;
 use Asmit\AdvancedKanban\Kanban;
-use Asmit\AdvancedKanban\Pages\KanbanPage;
 use Asmit\AdvancedKanban\RecordAction\DeleteAction;
 use Asmit\AdvancedKanban\RecordAction\EditAction;
-use BackedEnum;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Pages\ManageRelatedRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 
-class KanbanTask extends KanbanPage
+class ManageProjectTasksKanban extends ManageRelatedRecords implements HasKanban
 {
-    protected ?string $heading = 'Task Kanban';
+    use HasKanbanRelatedRecords;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
+    protected static string $resource = ProjectResource::class;
 
-    protected static string $columnHeaderComponent = 'kanban.task-resource.column-header';
+    protected static string $relationship = 'tasks';
 
-    protected static string $cardComponent = 'kanban.task-resource.card';
-
-    protected static ?string $navigationLabel = 'Tasks';
-
-    protected static bool $shouldPersistFilterInSession = true;
-
-    protected static bool $shouldPersistSearchInSession = true;
-
-    public function getBreadcrumbs(): array
+    public function getColumnHeaderComponent(): string
     {
-        return [
-            url()->current() => 'Tasks',
-            '' => 'Kanban',
-        ];
+        return 'kanban.task-resource.column-header';
+    }
+
+    public function getCardComponent(): string
+    {
+        return 'kanban.task-resource.card';
+    }
+
+    public function getShouldPersistSearchInSession(): bool
+    {
+        return true;
+    }
+
+    public function getShouldPersistFiltersInSession(): bool
+    {
+        return true;
     }
 
     public function getTabs(): array
@@ -126,29 +131,19 @@ class KanbanTask extends KanbanPage
                     ->link(),
             ])
             ->filterFormSchema([
-                Select::make('project_id')
-                    ->model(Task::class)
-                    ->relationship('project', 'name')
-                    ->preload()
-                    ->searchable()
-                    ->nullable(),
-
                 Select::make('status')
                     ->options(TaskStatus::class)
-                    ->default([TaskStatus::PENDING, TaskStatus::IN_PROGRESS, TaskStatus::REVIEW, TaskStatus::COMPLETED, TaskStatus::ARCHIVED])
+                    ->default([TaskStatus::PENDING, TaskStatus::IN_PROGRESS, TaskStatus::COMPLETED])
                     ->multiple()
                     ->nullable(),
 
                 Select::make('priority')
                     ->options(Priority::class)
-                    ->default([Priority::MEDIUM, Priority::HIGH])
+                    ->default([Priority::LOW, Priority::HIGH])
                     ->multiple()
                     ->nullable(),
             ])
             ->applyFiltersUsing(function (Builder $query, array $filters): Builder {
-                if (! empty($filters['project_id'])) {
-                    $query->where('project_id', $filters['project_id']);
-                }
                 if (! empty($filters['status'])) {
                     $query->whereIn('status', $filters['status']);
                 }
@@ -160,7 +155,7 @@ class KanbanTask extends KanbanPage
             });
     }
 
-    public function taskForm($status): array
+    private function taskForm($status): array
     {
         return [
             Select::make('status')
@@ -169,6 +164,7 @@ class KanbanTask extends KanbanPage
 
             Select::make('project_id')
                 ->required()
+                ->default(fn () => $this->getOwnerRecord()?->id)
                 ->searchable()
                 ->relationship('project', 'name'),
 
@@ -190,8 +186,8 @@ class KanbanTask extends KanbanPage
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('Task List')
-                ->url(ListTasks::getUrl())
+            \Filament\Actions\Action::make('Project Tasks List')
+                ->url(fn () => ManageProjectTasks::getUrl(['record' => $this->getOwnerRecord()]))
                 ->icon(Heroicon::ListBullet),
         ];
     }
@@ -232,7 +228,6 @@ class KanbanTask extends KanbanPage
 
                     TextEntry::make('due_date')
                         ->default($record->due_date?->toFormattedDateString() ?? 'No due date'),
-
                 ];
             });
     }
