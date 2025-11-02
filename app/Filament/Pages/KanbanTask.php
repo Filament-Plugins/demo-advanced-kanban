@@ -72,6 +72,7 @@ class KanbanTask extends KanbanPage
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->orderBy('created_at', 'desc'))
             ->searchableFields(['title', 'description'])
             ->enableLoadingIndicator()
+            ->enableFilterIndicator()
             ->columns([
                 KanbanColumn::make('pending')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
