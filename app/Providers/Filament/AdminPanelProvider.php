@@ -35,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->favicon(asset('favicon.ico'))
             ->plugins([
                 KanbanBuilder::make()
             ])

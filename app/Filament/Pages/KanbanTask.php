@@ -7,6 +7,7 @@ use App\Filament\Resources\Tasks\Pages\ListTasks;
 use App\Models\Project;
 use App\Models\Task;
 use Asmit\AdvancedKanban\Actions\ActionGroup;
+use Asmit\AdvancedKanban\Actions\CreateAction as ActionsCreateAction;
 use Asmit\AdvancedKanban\Columns\KanbanColumn;
 use Asmit\AdvancedKanban\Kanban;
 use Asmit\AdvancedKanban\Pages\KanbanPage;
@@ -75,6 +76,7 @@ class KanbanTask extends KanbanPage
             ->modifyQueryUsing(fn(Builder $query) => $query->with(['assignedTo'])->orderBy('created_at', 'desc'))
             ->searchableFields(['title', 'description'])
             ->enableLoadingIndicator()
+            ->enableFilterIndicator()
             ->columns([
                 KanbanColumn::make('pending')
                     ->lockCardUsing(fn(Task $record) => $record->unassigned())
@@ -118,7 +120,7 @@ class KanbanTask extends KanbanPage
                ])
             ])
             ->columnHeaderActions([
-                CreateAction::make()
+                ActionsCreateAction::make()
                     ->model(Task::class)
                     ->schema(function(array $arguments): array {
                         return $this->taskForm($arguments['status']);
@@ -137,8 +139,7 @@ class KanbanTask extends KanbanPage
 
                 Select::make('status')
                     ->options(TaskStatus::class)
-                    ->multiple()
-                    ->nullable(),
+                    ->multiple(),
             ])
             ->applyFiltersUsing(function(Builder $query, array $filters): Builder {
                 if (! empty($filters['project_id'])) {
