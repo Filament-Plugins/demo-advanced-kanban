@@ -7,13 +7,13 @@ use App\Enums\TaskStatus;
 use App\Filament\Resources\Tasks\Pages\ListTasks;
 use App\Models\Task;
 use Asmit\AdvancedKanban\Actions\ActionGroup;
+use Asmit\AdvancedKanban\Actions\CreateAction;
 use Asmit\AdvancedKanban\Columns\KanbanColumn;
 use Asmit\AdvancedKanban\Kanban;
 use Asmit\AdvancedKanban\Pages\KanbanPage;
 use Asmit\AdvancedKanban\RecordAction\DeleteAction;
 use Asmit\AdvancedKanban\RecordAction\EditAction;
 use BackedEnum;
-use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -107,7 +107,6 @@ class KanbanTask extends KanbanPage
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make('edit')
-                        ->model(Task::class)
                         ->schema(fn () => $this->taskForm(null)),
                     DeleteAction::make('delete')
                         ->icon(Heroicon::OutlinedTrash)
@@ -117,7 +116,6 @@ class KanbanTask extends KanbanPage
             ])
             ->columnHeaderActions([
                 CreateAction::make()
-                    ->model(Task::class)
                     ->schema(function (array $arguments): array {
                         return $this->taskForm($arguments['status']);
                     })
