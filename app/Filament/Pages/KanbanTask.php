@@ -14,13 +14,26 @@ use Asmit\AdvancedKanban\Pages\KanbanPage;
 use Asmit\AdvancedKanban\RecordAction\DeleteAction;
 use Asmit\AdvancedKanban\RecordAction\EditAction;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\EmptyState;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Image;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 class KanbanTask extends KanbanPage
 {
@@ -161,10 +174,6 @@ class KanbanTask extends KanbanPage
     public function taskForm($status): array
     {
         return [
-            Select::make('status')
-                ->options(TaskStatus::class)
-                ->default($status),
-
             Select::make('project_id')
                 ->required()
                 ->searchable()
@@ -174,6 +183,15 @@ class KanbanTask extends KanbanPage
                 ->required()
                 ->maxLength(255),
 
+            Group::make([
+                Select::make('status')
+                    ->options(TaskStatus::class)
+                    ->default($status),
+                Select::make('priority')
+                    ->required()
+                    ->options(Priority::class),
+            ])->columns(),
+
             Textarea::make('description')
                 ->maxLength(65535)
                 ->columnSpanFull(),
@@ -182,54 +200,99 @@ class KanbanTask extends KanbanPage
                 ->searchable()
                 ->relationship('assignedTo', 'name')
                 ->nullable(),
+
+            Repeater::make('attachments')
+                ->hiddenLabel()
+                ->relationship('attachments')
+                ->deletable(fn(Get $get) => count($get('attachments')) > 1)
+                ->columnSpanFull()
+                ->schema([
+                    FileUpload::make('file_path')
+                        ->visibility('public')
+                        ->disk('public')
+                    ->label('Attachment'),
+                ])->defaultItems(1),
         ];
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('Task List')
+            Action::make('Task List')
                 ->url(ListTasks::getUrl())
                 ->icon(Heroicon::ListBullet),
         ];
     }
 
-    public function viewAction(): \Filament\Actions\Action
+    public function viewAction(): Action
     {
-        return \Filament\Actions\Action::make('view')
+        return Action::make('view')
             ->label('Task Details')
             ->slideOver()
             ->record(fn (array $arguments) => Task::query()->with(['project', 'assignedTo'])->find($arguments['recordId']))
             ->modalSubmitAction(false)
+            ->modalWidth(Width::SevenExtraLarge)
             ->schema(function ($record) {
                 return [
-                    TextEntry::make('Title')
-                        ->default($record->title),
 
-                    TextEntry::make('Description')
-                        ->default($record->description),
+//                    Image::make(asset('01KC9WKYTC0JRKSV25Q9M807YS.png'), 'Task Image'),
+                    Grid::make(3)
+                    ->schema([
+                        Group::make([
+                            TextEntry::make('Title')
+                                ->default($record->title),
+                            TextEntry::make('Project')
+                                ->default($record->project->name),
 
-                    TextEntry::make('status')
-                        ->badge()
-                        ->icon($record->status->getIcon())
-                        ->color($record->status->getColor())
-                        ->default($record->status->getLabel()),
+                            TextEntry::make('Description')
+                                ->default($record->description),
 
-                    TextEntry::make('priority')
-                        ->badge()
-                        ->icon($record->priority->getIcon())
-                        ->color($record->priority->getColor())
-                        ->default($record->priority->getLabel()),
+                            TextEntry::make('Assigned To')
+                                ->badge()
+                                ->default($record->assignedTo?->name ?? 'Unassigned'),
 
-                    TextEntry::make('Project')
-                        ->default($record->project->name),
+                        ])->columnSpan(2),
+                        Group::make([
+                            TextEntry::make('status')
+                                ->badge()
+                                ->icon($record->status->getIcon())
+                                ->color($record->status->getColor())
+                                ->default($record->status->getLabel()),
 
-                    TextEntry::make('Assigned To')
-                        ->badge()
-                        ->default($record->assignedTo?->name ?? 'Unassigned'),
+                            TextEntry::make('priority')
+                                ->badge()
+                                ->icon($record->priority->getIcon())
+                                ->color($record->priority->getColor())
+                                ->default($record->priority->getLabel()),
 
-                    TextEntry::make('due_date')
-                        ->default($record->due_date?->toFormattedDateString() ?? 'No due date'),
+                            TextEntry::make('due_date')
+                                ->default($record->due_date?->toFormattedDateString() ?? 'No due date'),
+                        ])
+                    ]),
+
+                    Section::make('Attachments')
+                        ->contained(false)
+                        ->schema([
+                            RepeatableEntry::make('attachments')
+                                ->grid(4)
+                                ->state(fn() => $record->attachments->map(fn($attachment) => [
+                                    'file_path' => asset($attachment->file_path),
+                                ])->toArray())
+                                ->hiddenLabel()
+                                ->contained(false)
+                                ->model(fn() => $record)
+                                ->schema([
+                                    ImageEntry::make('file_path')
+                                        ->visibility('public')
+                                    ->hiddenLabel(),
+                                ])
+                        ]),
+
+                      EmptyState::make('no_attachments')
+                          ->visible(fn() => $record->attachments->isEmpty())
+                          ->heading('No Attachments')
+                          ->description('There are no attachments for this task.')
+                          ->icon(Heroicon::OutlinedPaperClip),
 
                 ];
             });
