@@ -15,6 +15,7 @@ use Asmit\AdvancedKanban\RecordAction\DeleteAction;
 use Asmit\AdvancedKanban\RecordAction\EditAction;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -24,6 +25,7 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\EmptyState;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Image;
@@ -185,20 +187,34 @@ class KanbanTask extends KanbanPage
 
             Group::make([
                 Select::make('status')
+                    ->required()
                     ->options(TaskStatus::class)
                     ->default($status),
+
                 Select::make('priority')
                     ->required()
                     ->options(Priority::class),
-            ])->columns(),
+
+                DatePicker::make('due_date')
+                    ->minDate(today())
+                    ->nullable(),
+            ])->columns(3),
 
             Textarea::make('description')
+                ->required()
                 ->maxLength(65535)
                 ->columnSpanFull(),
 
             Select::make('assigned_to')
                 ->searchable()
                 ->relationship('assignedTo', 'name')
+                ->nullable(),
+
+            Select::make('tags')
+                ->label('Tags')
+                ->multiple()
+                ->preload()
+                ->relationship('tags', 'name')
                 ->nullable(),
 
             Repeater::make('attachments')
@@ -229,16 +245,16 @@ class KanbanTask extends KanbanPage
         return Action::make('view')
             ->label('Task Details')
             ->slideOver()
-            ->record(fn (array $arguments) => Task::query()->with(['project', 'assignedTo'])->find($arguments['recordId']))
+            ->record(fn (array $arguments) => Task::query()->with(['project', 'assignedTo', 'tags'])->find($arguments['recordId']))
             ->modalSubmitAction(false)
             ->modalWidth(Width::SevenExtraLarge)
             ->schema(function ($record) {
                 return [
-
-//                    Image::make(asset('01KC9WKYTC0JRKSV25Q9M807YS.png'), 'Task Image'),
                     Grid::make(3)
                     ->schema([
                         Group::make([
+                            TextEntry::make('tags.name')
+                                ->badge(),
                             TextEntry::make('Title')
                                 ->default($record->title),
                             TextEntry::make('Project')
@@ -251,7 +267,8 @@ class KanbanTask extends KanbanPage
                                 ->badge()
                                 ->default($record->assignedTo?->name ?? 'Unassigned'),
 
-                        ])->columnSpan(2),
+                        ])
+                            ->columnSpan(2),
                         Group::make([
                             TextEntry::make('status')
                                 ->badge()

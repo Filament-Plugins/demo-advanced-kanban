@@ -18,6 +18,8 @@ class TaskInfolist
             ->components([
                 Section::make()
                 ->schema([
+                    TextEntry::make('tags.name')
+                    ->badge(),
                     TextEntry::make('title'),
                     TextEntry::make('description')
                         ->placeholder('-')

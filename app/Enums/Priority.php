@@ -19,7 +19,7 @@ enum Priority: string implements HasLabel, HasColor, HasIcon
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::LOW => 'success',
+            self::LOW => 'gray',
             self::MEDIUM => 'warning',
             self::HIGH => 'danger',
         };
@@ -28,9 +28,9 @@ enum Priority: string implements HasLabel, HasColor, HasIcon
     public function getIcon(): string|BackedEnum|null
     {
         return match ($this) {
-            self::LOW => Heroicon::OutlinedArrowDown,
-            self::MEDIUM => Heroicon::OutlinedArrowRight,
-            self::HIGH => Heroicon::OutlinedArrowUp,
+            self::LOW => Heroicon::Minus,
+            self::MEDIUM => Heroicon::Bars2,
+            self::HIGH => Heroicon::Bars3,
         };
     }
 
