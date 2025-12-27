@@ -84,7 +84,7 @@ class KanbanTask extends KanbanPage
         return $kanban
             ->model(Task::class)
             ->statusField('status')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->orderBy('created_at', 'desc'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo', 'tags', 'attachments'])->orderBy('created_at', 'desc'))
             ->searchableFields(['title', 'description'])
             ->enableLoadingIndicator()
             ->enableFilterIndicator()
@@ -245,7 +245,7 @@ class KanbanTask extends KanbanPage
         return Action::make('view')
             ->label('Task Details')
             ->slideOver()
-            ->record(fn (array $arguments) => Task::query()->with(['project', 'assignedTo', 'tags'])->find($arguments['recordId']))
+            ->record(fn (array $arguments) => Task::query()->with(['project', 'assignedTo', 'tags', 'attachments'])->find($arguments['recordId']))
             ->modalSubmitAction(false)
             ->modalWidth(Width::SevenExtraLarge)
             ->schema(function ($record) {
@@ -253,15 +253,17 @@ class KanbanTask extends KanbanPage
                     Grid::make(3)
                     ->schema([
                         Group::make([
-                            TextEntry::make('tags.name')
-                                ->badge(),
                             TextEntry::make('Title')
                                 ->default($record->title),
                             TextEntry::make('Project')
                                 ->default($record->project->name),
-
                             TextEntry::make('Description')
                                 ->default($record->description),
+
+                            TextEntry::make('tags.name')
+                                ->label('Tags')
+                                ->default(fn() => $record->tags->pluck('name'))
+                                ->badge(),
 
                             TextEntry::make('Assigned To')
                                 ->badge()
@@ -287,11 +289,9 @@ class KanbanTask extends KanbanPage
                         ])
                     ]),
 
-                    Section::make('Attachments')
-                        ->contained(false)
+                    Fieldset::make('Attachments')
                         ->schema([
                             RepeatableEntry::make('attachments')
-                                ->grid(4)
                                 ->state(fn() => $record->attachments->map(fn($attachment) => [
                                     'file_path' => asset($attachment->file_path),
                                 ])->toArray())

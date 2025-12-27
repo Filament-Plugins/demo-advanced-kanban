@@ -30,38 +30,19 @@
         <p class="kanban-item-description">
             {{ Str::limit($record->{$this->getKanban()->getDescriptionField()}, 80) }}
         </p>
-       <div>
-           <x-filament::badge
-               size="sm"
-               :color="$record->priority->getColor()"
-               :icon="$record->priority->getIcon()"
-           >
-               {{ $record->priority->getLabel() }}
-           </x-filament::badge>
+       <div >
+              @foreach($record->tags as $tag)
+                  <x-filament::badge
+                      size="sm"
+                      class="mr-1"
+                      color="gray"
+                  >
+                      {{ $tag->name }}
+                  </x-filament::badge>
+
+              @endforeach
        </div>
-        <div class="flex items-center justify-between gap-2 mt-2 w-full">
-            @if($name = $record->assignedTo?->name)
-                <div class="flex items-center gap-2">
-                    <x-filament::avatar
-                        :size="Size::Small->value"
-                        src="https://api.dicebear.com/9.x/adventurer/svg?seed={{ $name }}"
-                        alt="Advanced Kanban"
-                    />
-                    <span class="text-xs">{{ $name }}</span>
-                </div>
-            @else
-                <div class="kanban-item-footer">
-                    @if($lockedColumn->isCardLocked)
-                        <div class="flex items-center gap-x-1 bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded-full">
-                            <x-filament::icon
-                                :icon=" $lockedColumn->icon"
-                                class="h-3 w-3 text-gray-500 dark:text-gray-200"
-                            />
-                            <span class="!text-xs font-medium text-gray-500 dark:text-gray-200">{{ $lockedColumn->label }}</span>
-                        </div>
-                    @endif
-                </div>
-            @endif
+        <div class="mt-4 flex items-center justify-between gap-2 w-full">
             <div class="flex shrink-0 items-center gap-x-2">
                 <x-filament::icon
                     :icon="Heroicon::Calendar"
@@ -69,6 +50,48 @@
                     class="text-zinc-500"
                 />
                 <span class="text-xs">{{ $record->due_date?->format('M d, Y') }}</span>
+            </div>
+            <x-filament::badge
+                size="sm"
+                :color="$record->priority->getColor()"
+                :icon="$record->priority->getIcon()"
+            >
+                {{ $record->priority->getLabel() }}
+            </x-filament::badge>
+
+        </div>
+        <div class="border-t border-zinc-200 mt-4 dark:border-zinc-700 my-2 flex">
+            <div class="flex items-center justify-between gap-2 mt-2 w-full">
+                @if($name = $record->assignedTo?->name)
+                    <div class="flex items-center gap-2">
+                        <x-filament::avatar
+                            :size="Size::Small->value"
+                            src="https://api.dicebear.com/9.x/adventurer/svg?seed={{ $name }}"
+                            alt="Advanced Kanban"
+                        />
+                        <span class="text-xs">{{ $name }}</span>
+                    </div>
+                @else
+                    <div class="kanban-item-footer">
+                        @if($lockedColumn->isCardLocked)
+                            <div class="flex items-center gap-x-1 bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded-full">
+                                <x-filament::icon
+                                    :icon=" $lockedColumn->icon"
+                                    class="h-3 w-3 text-gray-500 dark:text-gray-200"
+                                />
+                                <span class="!text-xs font-medium text-gray-500 dark:text-gray-200">{{ $lockedColumn->label }}</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+            </div>
+            <div class="flex items-center gap-x-1 mt-2 shrink-0">
+               <x-filament::icon
+                    :size="IconSize::Small"
+                    :icon="Heroicon::PaperClip"
+                    class="text-zinc-500"
+               />
+                <span class="text-xs">{{ $record->attachments->count() }} Files</span>
             </div>
         </div>
     @endif

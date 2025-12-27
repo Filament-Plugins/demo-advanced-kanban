@@ -18,8 +18,6 @@ class TaskInfolist
             ->components([
                 Section::make()
                 ->schema([
-                    TextEntry::make('tags.name')
-                    ->badge(),
                     TextEntry::make('title'),
                     TextEntry::make('description')
                         ->placeholder('-')
@@ -39,7 +37,10 @@ class TaskInfolist
                         TextEntry::make('created_at')
                             ->dateTime()
                             ->placeholder('-'),
-                        ])->columns(3)
+                        ])->columns(3),
+                     TextEntry::make('tags.name')
+                         ->label('Tags')
+                         ->badge(),
                 ])->columnSpanFull()
             ]);
     }
