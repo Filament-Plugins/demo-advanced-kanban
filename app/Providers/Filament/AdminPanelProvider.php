@@ -72,6 +72,10 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => Cache::has('demo_reset_in_progress') ? view('filament.hooks.data-fetch-indicator') : '',
             )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => view('filament.hooks.clarity'),
+            )
             ->viteTheme('resources/css/filament/admin/theme.css');
     }
 }
