@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
@@ -27,6 +28,8 @@ class RecreateDemoData extends Command
 
     public function handle(): int
     {
+        Cache::put('demo_reset_in_progress', true);
+
         $this->info('Recreating demo data...');
 
         Schema::disableForeignKeyConstraints();
@@ -36,6 +39,7 @@ class RecreateDemoData extends Command
         // Delete existing data in order
         Task::query()->delete();
         Project::query()->delete();
+        User::query()->whereNot('email', 'advanced@kanban.com')->delete();
 
         if ($wipeUsers) {
             User::query()->delete();
@@ -56,6 +60,7 @@ class RecreateDemoData extends Command
         $this->seedTasks($projects);
 
         $this->components->twoColumnDetail('Demo data recreation', '<info>DONE</info>');
+        Cache::forget('demo_reset_in_progress');
         return self::SUCCESS;
     }
 
