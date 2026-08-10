@@ -1,7 +1,9 @@
 {{-- This component is based on the Advanced Kanban package column header --}}
 {{-- You can customize this component to match your design requirements --}}
 
-@php use Filament\Support\Enums\IconSize; @endphp
+@php
+    use Filament\Support\Enums\IconSize;
+@endphp
 @props([
     'column' => null,
     'status' => null,

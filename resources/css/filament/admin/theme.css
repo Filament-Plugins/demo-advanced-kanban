@@ -2,3 +2,210 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/**/*';
+
+/* ---------- Premium demo hero ---------- */
+.ak-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, #18181b 0%, #27180a 55%, #3a2308 100%);
+    box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+.ak-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+.ak-hero-glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.ak-hero-glow-a {
+    top: -6rem;
+    right: -4rem;
+    height: 20rem;
+    width: 20rem;
+    background: radial-gradient(circle, var(--primary-500, #f59e0b) 0%, transparent 70%);
+}
+
+.ak-hero-glow-b {
+    bottom: -8rem;
+    left: -6rem;
+    height: 18rem;
+    width: 18rem;
+    background: radial-gradient(circle, var(--primary-700, #b45309) 0%, transparent 70%);
+    opacity: 0.25;
+}
+
+.ak-hero-cta-primary {
+    box-shadow: 0 10px 30px -8px var(--primary-500, #f59e0b);
+}
+
+.ak-hero-cta-secondary {
+    --c-50: 255 255 255;
+    --c-400: 255 255 255;
+    --c-500: 255 255 255;
+    --c-600: 255 255 255;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ak-hero-cta-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ---------- Premium feature cards ---------- */
+.ak-feature-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ak-feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.25);
+}
+
+.ak-feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 0.75rem;
+}
+
+/*
+ * Task Kanban demo board.
+ *
+ * The plugin's own stylesheet is loaded at runtime by x-load-css, so it lands after this file
+ * and would win on equal specificity. Everything below is a selector more specific, and the
+ * `.kanban-demo` the page view puts on its wrapper keeps it off every other board (the resource
+ * relation-manager board on a project's page renders its own, unrelated, `.kanban-panel`).
+ *
+ * The scope is `body:has()` rather than a descendant of `.kanban-demo` on purpose. Sortable runs
+ * with `fallbackOnBody`, so the card you are dragging is moved to <body> — outside the page
+ * wrapper. Scoped to the wrapper, every rule below would stop matching the moment a drag began
+ * and the card would visibly change shape in your hand.
+ */
+
+body:has(.kanban-demo) {
+    /* Set per column below; the shared rule reads it rather than repeating each colour. */
+    --kanban-accent: var(--gray-400);
+}
+
+body:has(.kanban-demo) .kanban-accent-pending { --kanban-accent: var(--gray-400); }
+body:has(.kanban-demo) .kanban-accent-in-progress { --kanban-accent: var(--info-500); }
+body:has(.kanban-demo) .kanban-accent-review { --kanban-accent: var(--warning-500); }
+body:has(.kanban-demo) .kanban-accent-completed { --kanban-accent: var(--success-500); }
+body:has(.kanban-demo) .kanban-accent-archived { --kanban-accent: var(--gray-500); }
+
+/* The heading's ::after is the panel behind the label. Repainting its top border is the least
+   invasive way to give each column a colour without a second pseudo-element. */
+body:has(.kanban-demo) .kanban-header-column::after {
+    border-top: 3px solid var(--kanban-accent);
+}
+
+/* Cards ------------------------------------------------------------------ */
+
+/* `transform` is deliberately not transitioned here. Sortable owns that property: it positions
+   the dragged card by writing `translate3d()` to it on every pointer move, and reorders the rest
+   of the column the same way. Animating it makes the card trail the cursor. */
+body:has(.kanban-demo) .kanban-item {
+    --kanban-card-shadow: 0 1px 2px 0 color-mix(in oklab, var(--gray-950) 5%, transparent);
+    --kanban-card-shadow-hover: 0 4px 12px -2px color-mix(in oklab, var(--gray-950) 12%, transparent);
+
+    transition:
+        box-shadow 150ms ease,
+        background-color 150ms ease;
+}
+
+/* Tailwind builds `ring` out of box-shadow, and the plugin rings both the card being dragged and
+   the gap it would land in. Setting box-shadow replaces the whole property, so it is kept off any
+   card that is mid-drag rather than painting over those rings. */
+body:has(.kanban-demo) .kanban-item:not(.drag-follow, .sortable-chosen, .sortable-drag, .sortable-ghost) {
+    box-shadow: var(--kanban-card-shadow);
+}
+
+body:has(.kanban-demo) .kanban-item:not(.drag-follow, .sortable-chosen, .sortable-drag, .sortable-ghost):hover {
+    box-shadow: var(--kanban-card-shadow-hover);
+}
+
+/* Nothing should animate while a drag is in flight — not the card being dragged, and not the
+   cards shuffling out of its way. */
+body:has(.kanban-item.sortable-chosen) .kanban-item,
+.kanban-item.drag-follow,
+.kanban-item.sortable-chosen,
+.kanban-item.sortable-drag,
+.kanban-item.sortable-ghost {
+    transition: none;
+}
+
+/* Dark cards sit on a dark column; an outline carries the edge and a drop shadow only muddies it. */
+.dark body:has(.kanban-demo) .kanban-item {
+    --kanban-card-shadow: none;
+    --kanban-card-shadow-hover: none;
+
+    outline-color: rgb(255 255 255 / 10%);
+}
+
+.dark body:has(.kanban-demo) .kanban-item:hover {
+    background-color: var(--gray-600);
+}
+
+/* The corner actions only need to be legible on hover; before that they should not compete with
+   the card's own content. */
+body:has(.kanban-demo) .kanban-action .fi-icon-btn {
+    opacity: 0.45;
+    transition: opacity 150ms ease;
+}
+
+body:has(.kanban-demo) .kanban-item:hover .kanban-action .fi-icon-btn,
+body:has(.kanban-demo) .kanban-action:focus-within .fi-icon-btn {
+    opacity: 1;
+}
+
+/* A locked card should read as locked at a glance, not only from its badge. */
+body:has(.kanban-demo) .kanban-item.locked {
+    background-image: repeating-linear-gradient(
+        135deg,
+        color-mix(in oklab, var(--gray-950) 3%, transparent) 0,
+        color-mix(in oklab, var(--gray-950) 3%, transparent) 1px,
+        transparent 0,
+        transparent 6px
+    );
+    cursor: default;
+}
+
+.dark body:has(.kanban-demo) .kanban-item.locked {
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgb(255 255 255 / 5%) 0,
+        rgb(255 255 255 / 5%) 1px,
+        transparent 0,
+        transparent 6px
+    );
+}
+
+/* Board chrome ------------------------------------------------------------ */
+
+body:has(.kanban-demo) .kanban-container {
+    border-radius: 0.875rem;
+}
+
+body:has(.kanban-demo) .kanban-column-content {
+    scrollbar-width: thin;
+}

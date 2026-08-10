@@ -9,6 +9,8 @@ class FeaturesWidget extends Widget
     protected string $view = 'filament.widgets.features-widget';
 
     protected int|string|array $columnSpan = 'full';
-    
+
     protected static ?int $sort = 3;
+
+    protected static bool $isLazy = false;
 }

@@ -16,6 +16,7 @@ class Task extends Model
         'title',
         'description',
         'status',
+        'position',
         'due_date',
         'priority',
         'assigned_to',
@@ -24,9 +25,21 @@ class Task extends Model
 
     protected $casts = [
         'due_date' => 'date',
+        'position' => 'float',
         'priority' => Priority::class,
-        'status' => TaskStatus::class
+        'status' => TaskStatus::class,
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Task $task): void {
+            if ($task->position !== null) {
+                return;
+            }
+
+            $task->position = static::query()->where('status', $task->status)->max('position') + 1.0;
+        });
+    }
 
     public function project(): BelongsTo
     {

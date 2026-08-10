@@ -13,18 +13,27 @@ use Asmit\AdvancedKanban\Kanban;
 use Asmit\AdvancedKanban\Pages\KanbanPage;
 use Asmit\AdvancedKanban\RecordAction\DeleteAction;
 use Asmit\AdvancedKanban\RecordAction\EditAction;
+use Asmit\AdvancedKanban\RecordAction\MoveToTopAction;
+use Asmit\AdvancedKanban\RecordAction\ReplicateAction;
+use Asmit\AdvancedKanban\Support\RecordPosition;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Support\Enums\Size;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 
 class KanbanTask extends KanbanPage
 {
     protected ?string $heading = 'Task Kanban';
+
+    protected string $view = 'filament.pages.kanban-task';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
 
@@ -37,6 +46,22 @@ class KanbanTask extends KanbanPage
     protected static bool $shouldPersistFilterInSession = true;
 
     protected static bool $shouldPersistSearchInSession = true;
+
+    /**
+     * The status attribute is cast to the TaskStatus enum, but record actions such as
+     * MoveToTopAction read it via getAttribute() and pass it straight through to this
+     * method, which the base class types as a plain string.
+     */
+    public function moveRecord(string|int $recordId, string|BackedEnum $newStatus, string|int|null $previousId = null, string|int|null $nextId = null, ?array $transitionData = null): void
+    {
+        parent::moveRecord(
+            $recordId,
+            $newStatus instanceof BackedEnum ? (string) $newStatus->value : $newStatus,
+            $previousId,
+            $nextId,
+            $transitionData,
+        );
+    }
 
     public function getBreadcrumbs(): array
     {
@@ -69,7 +94,8 @@ class KanbanTask extends KanbanPage
         return $kanban
             ->model(Task::class)
             ->statusField('status')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->orderBy('created_at', 'desc'))
+            ->orderField('position')
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo']))
             ->searchableFields(['title', 'description'])
             ->enableLoadingIndicator()
             ->enableFilterIndicator()
@@ -78,36 +104,62 @@ class KanbanTask extends KanbanPage
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedClock)
+                    ->iconColor('gray')
+                    ->extraColumnHeadingClass(['kanban-accent-pending'])
                     ->allowedTransitions(['in_progress', 'archived']),
 
                 KanbanColumn::make('in_progress')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedArrowPath)
+                    ->iconColor('info')
+                    ->extraColumnHeadingClass(['kanban-accent-in-progress'])
                     ->allowedTransitions(['review', 'pending', 'archived']),
 
                 KanbanColumn::make('review')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedEye)
+                    ->iconColor('warning')
+                    ->extraColumnHeadingClass(['kanban-accent-review'])
                     ->allowedTransitions(['completed', 'in_progress', 'archived']),
 
                 KanbanColumn::make('completed')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedCheckCircle)
-                    ->allowedTransitions(['archived', 'pending']),
+                    ->iconColor('success')
+                    ->extraColumnHeadingClass(['kanban-accent-completed'])
+                    ->allowedTransitions(['archived', 'pending'])
+                    ->requiresFormOnEnter([
+                        Textarea::make('completion_note')
+                            ->label('Completion note')
+                            ->placeholder('What was done to complete this task?')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->transitionModalHeading('Mark task as completed')
+                    ->transitionModalDescription('Add a short note before this card moves into Completed.')
+                    ->transitionModalSubmitActionLabel('Complete task')
+                    ->saveTransitionDataUsing(function (Task $record, array $data): void {
+                        $record->description = trim($record->description."\n\n✔ ".$data['completion_note']);
+                    }),
 
                 KanbanColumn::make('archived')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedArchiveBox)
+                    ->iconColor('gray')
+                    ->extraColumnHeadingClass(['kanban-accent-archived'])
                     ->allowedTransitions(['pending']),
             ])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make('edit')
                         ->schema(fn () => $this->taskForm(null)),
+                    MoveToTopAction::make(),
+                    ReplicateAction::make('replicate')
+                        ->icon(Heroicon::OutlinedDocumentDuplicate),
                     DeleteAction::make('delete')
                         ->icon(Heroicon::OutlinedTrash)
                         ->requiresConfirmation()
@@ -122,6 +174,29 @@ class KanbanTask extends KanbanPage
                     ->icon(Heroicon::OutlinedPlus)
                     ->hiddenLabel()
                     ->link(),
+
+                ActionGroup::make([
+                    Action::make('columnSummary')
+                        ->label('Column summary')
+                        ->icon(Heroicon::OutlinedChartBar)
+                        ->modalHeading(fn (array $arguments): string => $this->columnLabel($arguments['status'] ?? '').' at a glance')
+                        ->modalWidth(Width::Medium)
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->modalContent(fn (array $arguments) => view('filament.kanban.column-summary', [
+                            'summary' => $this->columnSummary($arguments['status'] ?? ''),
+                        ])),
+
+                    Action::make('sortByDueDate')
+                        ->label('Sort by due date')
+                        ->icon(Heroicon::OutlinedArrowsUpDown)
+                        ->requiresConfirmation()
+                        ->modalDescription('Renumbers this column so the soonest due date sits at the top.')
+                        ->action($this->sortColumnByDueDate(...)),
+                ])
+                    ->label('Column actions')
+                    ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                    ->size(Size::Small),
             ])
             ->filterFormSchema([
                 Select::make('project_id')
@@ -156,6 +231,61 @@ class KanbanTask extends KanbanPage
 
                 return $query;
             });
+    }
+
+    protected function columnLabel(string $status): string
+    {
+        $columns = $this->getKanban()->getCachedMountedKanbanColumns();
+
+        return ($columns[$status] ?? null)?->getLabel() ?? $status;
+    }
+
+    /**
+     * @return array{total: int, overdue: int, unassigned: int, priorities: array<string, int>}
+     */
+    protected function columnSummary(string $status): array
+    {
+        $tasks = $this->getKanban()->getQuery()->where('status', $status)->get();
+
+        return [
+            'total' => $tasks->count(),
+            'overdue' => $tasks->filter(fn (Task $task): bool => $task->due_date
+                && $task->due_date->isPast()
+                && ! in_array($task->status, [TaskStatus::COMPLETED, TaskStatus::ARCHIVED], true))->count(),
+            'unassigned' => $tasks->whereNull('assigned_to')->count(),
+            'priorities' => collect(Priority::cases())
+                ->mapWithKeys(fn (Priority $priority): array => [
+                    $priority->value => $tasks->where('priority', $priority)->count(),
+                ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    protected function sortColumnByDueDate(array $arguments): void
+    {
+        $status = $arguments['status'] ?? null;
+
+        if (blank($status)) {
+            return;
+        }
+
+        Task::query()
+            ->where('status', $status)
+            ->orderByRaw('due_date is null, due_date')
+            ->get()
+            ->each(fn (Task $task, int $index) => $task->update([
+                'position' => ($index + 1) * RecordPosition::GAP,
+            ]));
+
+        $this->loadKanbanRecords();
+
+        Notification::make()
+            ->title($this->columnLabel($status).' sorted by due date')
+            ->success()
+            ->send();
     }
 
     public function taskForm($status): array
