@@ -21,10 +21,15 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\Size;
+use Filament\Support\Enums\TextSize;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,8 +43,6 @@ class KanbanTask extends KanbanPage
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
 
     protected static string $columnHeaderComponent = 'kanban.task-resource.column-header';
-
-    protected static string $cardComponent = 'kanban.task-resource.card';
 
     protected static ?string $navigationLabel = 'Tasks';
 
@@ -149,6 +152,7 @@ class KanbanTask extends KanbanPage
             ->orderField('position')
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->withCount('comments'))
             ->searchableFields(['title', 'description'])
+            ->recordInfolist($this->cardSchema(...))
             ->enableLoadingIndicator()
             ->enableFilterIndicator()
             ->columns([
@@ -218,41 +222,9 @@ class KanbanTask extends KanbanPage
                         ->color('danger'),
                 ]),
 
-                // Left out of the corner menu on purpose: it lives inline in the card footer,
-                // next to the count it explains, rather than a click away in a dropdown.
-                Action::make('comment')
-                    ->label('Comment')
-                    ->icon(Heroicon::OutlinedChatBubbleLeftEllipsis)
-                    ->iconButton()
-                    ->color('gray')
-                    ->size(Size::ExtraSmall)
-                    ->record(fn (array $arguments): ?Task => filled($arguments['record'] ?? null)
-                        ? Task::query()->find($arguments['record'])
-                        : null)
-                    ->modalWidth(Width::Medium)
-                    ->modalHeading(fn (Task $record): string => "Comment on \"{$record->title}\"")
-                    ->modalSubmitActionLabel('Post')
-                    ->schema([
-                        Textarea::make('body')
-                            ->hiddenLabel()
-                            ->placeholder('Leave a note on this card…')
-                            ->rows(3)
-                            ->required(),
-                    ])
-                    ->action(function (array $data, Task $record): void {
-                        $record->comments()->create([
-                            'user_id' => auth()->id(),
-                            'body' => $data['body'],
-                        ]);
-
-                        Notification::make()
-                            ->title('Comment posted')
-                            ->body($record->title)
-                            ->success()
-                            ->send();
-
-                        $this->loadKanbanRecords();
-                    }),
+                // The comment action is deliberately absent here: recordActions() renders into the
+                // card's corner, and it belongs inline next to the count it explains. It is part of
+                // the card schema instead — see cardSchema().
             ])
             ->columnHeaderActions([
                 CreateAction::make()
@@ -261,6 +233,9 @@ class KanbanTask extends KanbanPage
                     })
                     ->icon(Heroicon::OutlinedPlus)
                     ->hiddenLabel()
+                    // Grey, not primary: a coloured button at the end of the heading row pulls
+                    // rank over the column's own name, which is the thing being read.
+                    ->color('gray')
                     ->link(),
 
                 ActionGroup::make([
@@ -284,6 +259,7 @@ class KanbanTask extends KanbanPage
                 ])
                     ->label('Column actions')
                     ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                    ->color('gray')
                     ->size(Size::Small),
             ])
             ->filterFormSchema([
@@ -318,6 +294,164 @@ class KanbanTask extends KanbanPage
                 }
 
                 return $query;
+            });
+    }
+
+    /**
+     * The card body, as infolist entries rather than a Blade component.
+     *
+     * The plugin renders this in place of its built-in title/description markup, keeping the
+     * corner actions and the locked indicator around it. Everything a card says about a task is
+     * therefore an entry here, which is also what lets the comment action sit in the footer: the
+     * schema carries the record, so an action inside it resolves the task the same way an action
+     * anywhere else in Filament does.
+     *
+     * @return array<int, \Filament\Schemas\Components\Component>
+     */
+    protected function cardSchema(Task $record): array
+    {
+        $isOverdue = $record->due_date
+            && $record->due_date->isPast()
+            && ! in_array($record->status, [TaskStatus::COMPLETED, TaskStatus::ARCHIVED], true);
+
+        // Every column locks on the same rule, so the badge below can read the record directly.
+        // It has to keep saying the same thing as lockCardUsing() above: the plugin's own locked
+        // pill is hidden in the demo stylesheet, and this badge is what replaces it.
+        $isUnassigned = $record->unassigned();
+
+        return [
+            // The title and the description are the part of the card that opens it. The footer is
+            // left out of the click target so its own action and badges stay clickable.
+            Group::make([
+                TextEntry::make('title')
+                    ->hiddenLabel()
+                    ->weight(FontWeight::SemiBold)
+                    ->size(TextSize::Small)
+                    ->lineClamp(2),
+
+                TextEntry::make('description')
+                    ->hiddenLabel()
+                    ->size(TextSize::ExtraSmall)
+                    ->color('gray')
+                    ->limit(80)
+                    ->lineClamp(2)
+                    ->placeholder(''),
+            ])
+                ->extraAttributes([
+                    'class' => 'kanban-card-body',
+                    'wire:click' => "mountAction('viewAction', { recordId: {$record->getKey()} })",
+                ]),
+
+            Flex::make([
+                Flex::make([
+                    // Both entries take their state directly, the way viewAction() does: the card
+                    // is describing a relationship, and a dotted entry name resolves against the
+                    // schema's state rather than the record's relations.
+                    ImageEntry::make('assignee_avatar')
+                        ->hiddenLabel()
+                        ->circular()
+                        ->imageSize(20)
+                        ->state($record->assignedTo
+                            ? 'https://api.dicebear.com/9.x/adventurer/svg?seed='.urlencode($record->assignedTo->name)
+                            : null)
+                        ->grow(false)
+                        ->visible(! $isUnassigned),
+
+                    TextEntry::make('assignee_entry')
+                        ->hiddenLabel()
+                        ->size(TextSize::ExtraSmall)
+                        ->color('gray')
+                        ->state($record->assignedTo?->name)
+                        ->grow(false)
+                        ->visible(! $isUnassigned),
+
+                    // Takes the assignee's place rather than sitting on a row of its own: it is
+                    // an answer to the same question, and the card has nothing else to say there.
+                    TextEntry::make('locked_entry')
+                        ->hiddenLabel()
+                        ->badge()
+                        ->color('gray')
+                        ->icon(Heroicon::OutlinedLockClosed)
+                        ->state('Unassigned')
+                        ->tooltip('Unassigned cards are locked in place')
+                        ->grow(false)
+                        ->visible($isUnassigned),
+                ])
+                    ->extraAttributes(['class' => 'kanban-card-assignee'])
+                    ->grow(false),
+
+                Flex::make([
+                    // A badge on every priority makes every card shout equally, which reads the
+                    // same as none of them shouting. Only the priority worth interrupting for
+                    // gets one.
+                    TextEntry::make('priority')
+                        ->hiddenLabel()
+                        ->badge()
+                        ->grow(false)
+                        ->visible($record->priority === Priority::HIGH),
+
+                    TextEntry::make('due_date')
+                        ->hiddenLabel()
+                        ->badge()
+                        ->color($isOverdue ? 'danger' : 'gray')
+                        ->icon($isOverdue ? Heroicon::OutlinedExclamationCircle : Heroicon::OutlinedCalendar)
+                        // The year is only worth the width when it isn't the obvious one.
+                        ->formatStateUsing(fn (\Illuminate\Support\Carbon $state): string => $state->format(
+                            $state->isSameYear(now()) ? 'M d' : 'M d, Y',
+                        ))
+                        ->grow(false)
+                        ->placeholder(''),
+
+                    $this->commentAction(),
+
+                    TextEntry::make('comments_count')
+                        ->hiddenLabel()
+                        ->size(TextSize::ExtraSmall)
+                        ->color('gray')
+                        ->grow(false)
+                        ->visible((bool) $record->comments_count),
+                ])
+                    ->extraAttributes(['class' => 'kanban-card-meta'])
+                    ->grow(false),
+            ])
+                ->extraAttributes(['class' => 'kanban-card-footer']),
+        ];
+    }
+
+    /**
+     * Lives in the card schema rather than in recordActions(), so it can sit beside the count.
+     */
+    protected function commentAction(): Action
+    {
+        return Action::make('comment')
+            ->label('Comment')
+            ->icon(Heroicon::OutlinedChatBubbleLeftEllipsis)
+            ->iconButton()
+            ->color('gray')
+            ->size(Size::ExtraSmall)
+            ->modalWidth(Width::Medium)
+            ->modalHeading(fn (Task $record): string => "Comment on \"{$record->title}\"")
+            ->modalSubmitActionLabel('Post')
+            ->schema([
+                Textarea::make('body')
+                    ->hiddenLabel()
+                    ->placeholder('Leave a note on this card…')
+                    ->rows(3)
+                    ->required(),
+            ])
+            ->action(function (array $data, Task $record): void {
+                $record->comments()->create([
+                    'user_id' => auth()->id(),
+                    'body' => $data['body'],
+                ]);
+
+                Notification::make()
+                    ->title('Comment posted')
+                    ->body($record->title)
+                    ->success()
+                    ->send();
+
+                $this->loadKanbanRecords();
             });
     }
 
