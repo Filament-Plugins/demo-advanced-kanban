@@ -5,7 +5,7 @@
         <span class="sm:hidden"><strong>Make it yours today!</strong></span>
     </div>
 
-    <x-filament::button color="primary" class="dark:text-white shrink-0" size="sm" shadow="sm" href="https://checkout.anystack.sh/filament-advanced-kanban" tag="a" target="_blank">
+    <x-filament::button color="primary" class="dark:text-white shrink-0" size="sm" shadow="sm" href="https://asmit-nepali.privato.pub/portal/filament-advanced-kanban/checkout" tag="a" target="_blank">
         Get It Now
     </x-filament::button>
 </div>

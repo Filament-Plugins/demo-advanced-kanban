@@ -48,7 +48,7 @@
                     color="gray"
                     size="lg"
                     :icon="Heroicon::OutlinedCreditCard"
-                    href="https://checkout.anystack.sh/filament-advanced-kanban"
+                    href="https://asmit-nepali.privato.pub/portal/filament-advanced-kanban/checkout"
                     target="_blank"
                     tag="a"
                     class="ak-hero-cta-secondary"

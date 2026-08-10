@@ -8,7 +8,7 @@ This is a fully functional demo application that demonstrates the capabilities o
 
 - **📖 Documentation**: [https://laravelplugins.com/filament/advanced-kanban/](https://laravelplugins.com/filament/advanced-kanban/)
 - **🎥 Demo Video**: [Watch on YouTube](https://www.youtube.com/watch?v=lqVxcOwHQAA)
-- **💰 Purchase**: [Buy Advanced Kanban](https://checkout.anystack.sh/filament-advanced-kanban)
+- **💰 Purchase**: [Buy Advanced Kanban](https://asmit-nepali.privato.pub/portal/filament-advanced-kanban/checkout)
 - **🔌 Filament Plugin Page**: [View on Filament](https://filamentphp.com/plugins/asmit-nepali-advanced-kanban)
 - **🌐 All Plugins**: [Laravel Plugins](https://laravelplugins.com/)
 
@@ -120,7 +120,7 @@ This demo project is open source and available for educational purposes. The Adv
 
 **Ready to build something amazing?** 
 
-- **💰 [Purchase Advanced Kanban](https://checkout.anystack.sh/filament-advanced-kanban)** - Start building powerful Kanban boards today!
+- **💰 [Purchase Advanced Kanban](https://asmit-nepali.privato.pub/portal/filament-advanced-kanban/checkout)** - Start building powerful Kanban boards today!
 - **📖 [Read the Documentation](https://laravelplugins.com/filament/advanced-kanban/)** - Comprehensive guides and API reference
 - **🎥 [Watch the Demo Video](https://www.youtube.com/watch?v=lqVxcOwHQAA)** - See it in action
 
