@@ -148,7 +148,7 @@ body:has(.kanban-demo) .kanban-column[data-status='archived'] { --kanban-accent:
 body:has(.kanban-demo) .kanban-container {
     border: 0;
     border-radius: 1.25rem;
-    padding-inline: 0.25rem;
+    padding: 0.25rem 0.25rem 0;
     background:
         radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary-500) 6%, transparent) 0%, transparent 60%),
         white;
@@ -177,12 +177,6 @@ body:has(.kanban-demo) .kanban-grid > * {
     max-width: 340px;
 }
 
-/* The tabs row is pulled up by `-mb-6` so it can share a line with the search field. The demo also
-   renders a promo through KANBAN_SEARCH_BEFORE, which is wide enough that the two rows collide. */
-body:has(.kanban-demo) .fi-tabs-wrapper {
-    margin-bottom: 0;
-}
-
 /* Column panels ----------------------------------------------------------- */
 
 /* `::after` is the plugin's panel behind the heading label, and it is left neutral. Five saturated
@@ -207,6 +201,18 @@ body:has(.kanban-demo) .kanban-header-column.show-border::after {
 
 body:has(.kanban-demo) .kanban-header-column {
     padding: 0.75rem 0.75rem 0.625rem;
+}
+
+/* The container's top padding is what stops the heading panel reading as part of the board's own
+   top edge. `::before` is the strip the plugin paints over that gap so cards can't show through it
+   once the column scrolls, and it is page-coloured — correct when the board was a page-coloured
+   frame, wrong now that the board is its own surface. Repaint it to match. */
+body:has(.kanban-demo) .kanban-header-column::before {
+    background-color: white;
+}
+
+.dark body:has(.kanban-demo) .kanban-header-column::before {
+    background-color: color-mix(in oklab, var(--gray-950) 60%, var(--gray-950));
 }
 
 body:has(.kanban-demo) .kanban-column {
