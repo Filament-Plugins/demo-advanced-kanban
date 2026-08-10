@@ -92,10 +92,6 @@
             "name": "asmit",
             "type": "composer",
             "url": "https://asmit-nepali.privato.pub/composer"
-        },
-        {
-            "type": "composer",
-            "url": "https://filament-advanced-kanban.composer.sh"
         }
     ]
 }

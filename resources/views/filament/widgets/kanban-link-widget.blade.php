@@ -1,4 +1,14 @@
-@php use App\Filament\Pages\KanbanTask;use Filament\Support\Icons\Heroicon; @endphp
+@php
+    use App\Filament\Pages\KanbanTask;
+    use App\Models\Project;
+    use App\Models\Task;
+    use Filament\Support\Icons\Heroicon;
+
+    // Two of the four stat tiles below are real counts against this database, not marketing
+    // copy — a visitor should be able to tell the board underneath is live, not a screenshot.
+    $liveCardCount = Task::query()->count();
+    $liveProjectCount = Project::query()->count();
+@endphp
 
 <x-filament-widgets::widget>
     <div class="ak-hero">
@@ -57,12 +67,18 @@
                     <div class="text-xs text-white/60">Filament Ready</div>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-white">0ms</div>
-                    <div class="text-xs text-white/60">Config Drag &amp; Drop</div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="relative flex h-1.5 w-1.5">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                        </span>
+                        <div class="text-2xl font-bold text-white">{{ number_format($liveCardCount) }}</div>
+                    </div>
+                    <div class="text-xs text-white/60">Live Cards on This Board</div>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-white">100%</div>
-                    <div class="text-xs text-white/60">Eloquent Native</div>
+                    <div class="text-2xl font-bold text-white">{{ number_format($liveProjectCount) }}</div>
+                    <div class="text-xs text-white/60">Active Projects</div>
                 </div>
             </div>
         </div>

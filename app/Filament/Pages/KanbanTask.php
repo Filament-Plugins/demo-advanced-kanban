@@ -71,22 +71,74 @@ class KanbanTask extends KanbanPage
         ];
     }
 
+    /**
+     * Status is already the thing every column sorts by, so a status tab is a filter on
+     * information already on screen. These cut across columns instead — "what needs my
+     * attention" rather than "where does it currently sit."
+     */
     public function getTabs(): array
     {
         return [
-            Tab::make('all')
-                ->label('All')
-                ->icon(Heroicon::OutlinedSquare3Stack3d),
-            Tab::make('pending')
-                ->label('Pending')
-                ->icon(Heroicon::OutlinedClock)
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'pending')),
+            'all' => Tab::make('All work')
+                ->icon(Heroicon::OutlinedSquares2x2)
+                ->badge(fn (): int => $this->countTasks(fn (Builder $query) => $query)),
 
-            Tab::make('in_progress')
-                ->label('In Progress')
-                ->icon(Heroicon::OutlinedArrowPath)
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'in_progress')),
+            'mine' => Tab::make('Assigned to me')
+                ->icon(Heroicon::OutlinedUserCircle)
+                ->badge(fn (): int => $this->countTasks($this->assignedToMe(...)))
+                ->modifyQueryUsing($this->assignedToMe(...)),
+
+            'overdue' => Tab::make('Overdue')
+                ->icon(Heroicon::OutlinedExclamationTriangle)
+                ->badgeColor('danger')
+                ->badge(fn (): int => $this->countTasks($this->overdue(...)))
+                ->modifyQueryUsing($this->overdue(...)),
+
+            'week' => Tab::make('Due this week')
+                ->icon(Heroicon::OutlinedCalendarDays)
+                ->badge(fn (): int => $this->countTasks($this->dueThisWeek(...)))
+                ->modifyQueryUsing($this->dueThisWeek(...)),
         ];
+    }
+
+    /**
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    protected function assignedToMe(Builder $query): Builder
+    {
+        return $query->where('assigned_to', auth()->id());
+    }
+
+    /**
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    protected function overdue(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<', now())
+            ->whereNotIn('status', [TaskStatus::COMPLETED, TaskStatus::ARCHIVED]);
+    }
+
+    /**
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    protected function dueThisWeek(Builder $query): Builder
+    {
+        return $query->whereBetween('due_date', [now()->startOfDay(), now()->addWeek()]);
+    }
+
+    /**
+     * Tab badges count the whole board, not just the paginated head of each column.
+     *
+     * @param  \Closure(Builder<Task>): Builder<Task>  $scope
+     */
+    protected function countTasks(\Closure $scope): int
+    {
+        return $scope(Task::query())->count();
     }
 
     public function kanban(Kanban $kanban): Kanban
@@ -95,7 +147,7 @@ class KanbanTask extends KanbanPage
             ->model(Task::class)
             ->statusField('status')
             ->orderField('position')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->withCount('comments'))
             ->searchableFields(['title', 'description'])
             ->enableLoadingIndicator()
             ->enableFilterIndicator()
@@ -165,6 +217,42 @@ class KanbanTask extends KanbanPage
                         ->requiresConfirmation()
                         ->color('danger'),
                 ]),
+
+                // Left out of the corner menu on purpose: it lives inline in the card footer,
+                // next to the count it explains, rather than a click away in a dropdown.
+                Action::make('comment')
+                    ->label('Comment')
+                    ->icon(Heroicon::OutlinedChatBubbleLeftEllipsis)
+                    ->iconButton()
+                    ->color('gray')
+                    ->size(Size::ExtraSmall)
+                    ->record(fn (array $arguments): ?Task => filled($arguments['record'] ?? null)
+                        ? Task::query()->find($arguments['record'])
+                        : null)
+                    ->modalWidth(Width::Medium)
+                    ->modalHeading(fn (Task $record): string => "Comment on \"{$record->title}\"")
+                    ->modalSubmitActionLabel('Post')
+                    ->schema([
+                        Textarea::make('body')
+                            ->hiddenLabel()
+                            ->placeholder('Leave a note on this card…')
+                            ->rows(3)
+                            ->required(),
+                    ])
+                    ->action(function (array $data, Task $record): void {
+                        $record->comments()->create([
+                            'user_id' => auth()->id(),
+                            'body' => $data['body'],
+                        ]);
+
+                        Notification::make()
+                            ->title('Comment posted')
+                            ->body($record->title)
+                            ->success()
+                            ->send();
+
+                        $this->loadKanbanRecords();
+                    }),
             ])
             ->columnHeaderActions([
                 CreateAction::make()

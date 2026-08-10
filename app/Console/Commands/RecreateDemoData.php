@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\Priority;
 use App\Enums\TaskStatus;
+use App\Models\Comment;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -145,6 +146,15 @@ class RecreateDemoData extends Command
             $verbs = ['Implement', 'Fix', 'Design', 'Refactor', 'Document', 'Integrate', 'Research', 'Review'];
             $areas = ['authentication', 'API endpoint', 'database schema', 'UI components', 'notifications', 'webhooks', 'background jobs', 'validation rules', 'error handling', 'access control'];
 
+            $comments = [
+                'Kicked this off — should be quick.',
+                'Blocked on the API contract, following up.',
+                'Looks good, just needs a second pair of eyes.',
+                'Reproduced locally, digging into the root cause now.',
+                'Left some notes in the PR, nothing blocking.',
+                'Can we push the due date? Waiting on design.',
+            ];
+
             $users = User::query()->orderBy('id')->pluck('id')->all();
             $userCount = count($users);
 
@@ -186,7 +196,7 @@ class RecreateDemoData extends Command
                         $description = 'Task for '.$project->name.' focusing on '.$titleArea.'. '
                             .'Status: '.$status->value.', Priority: '.$priority->value.'.';
 
-                        Task::query()->create([
+                        $task = Task::query()->create([
                             'project_id' => $project->id,
                             'status' => $status->value,
                             'position' => $i + 1.0,
@@ -196,6 +206,16 @@ class RecreateDemoData extends Command
                             'title' => $title,
                             'description' => $description,
                         ]);
+
+                        // Roughly a quarter of cards arrive with a comment already on them, so the
+                        // board doesn't read as freshly unboxed on first load.
+                        if ($userCount > 0 && $globalIndex % 4 === 0) {
+                            Comment::query()->create([
+                                'task_id' => $task->id,
+                                'user_id' => $users[($globalIndex + 1) % $userCount],
+                                'body' => $comments[$globalIndex % count($comments)],
+                            ]);
+                        }
                     }
                 }
             }

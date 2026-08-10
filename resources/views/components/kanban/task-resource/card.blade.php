@@ -18,6 +18,13 @@
     // them shouting. Only the priority worth interrupting for gets one.
     $isHighPriority = $record->priority === \App\Enums\Priority::HIGH;
     $isOverdue = $record->due_date && $record->due_date->isPast() && ! in_array($record->status, [\App\Enums\TaskStatus::COMPLETED, \App\Enums\TaskStatus::ARCHIVED], true);
+
+    // The comment action lives in the footer, next to the count it explains, rather than in the
+    // corner dropdown with the record's destructive/structural actions. ActionGroup has no
+    // getName(), so it is always kept — only a plain Action can be the comment action.
+    $isCommentAction = fn ($action) => $action instanceof \Filament\Actions\Action && $action->getName() === 'comment';
+    $commentAction = collect($actions)->first($isCommentAction);
+    $cornerActions = collect($actions)->reject($isCommentAction);
 @endphp
 
 <div>
@@ -26,7 +33,7 @@
             {{ $record->{$this->getKanban()->getTitleField()} }}
         </h4>
         <div class="kanban-action flex">
-            @foreach($actions as $action)
+            @foreach($cornerActions as $action)
                 {{ $action }}
             @endforeach
         </div>
@@ -75,6 +82,15 @@
                     />
                     <span class="text-xs {{ $isOverdue ? 'text-danger-500 font-medium' : '' }}">{{ $record->due_date?->format('M d, Y') }}</span>
                 </div>
+
+                @if($commentAction)
+                    <div class="flex shrink-0 items-center gap-x-0.5" wire:click.stop>
+                        {{ $commentAction }}
+                        @if($record->comments_count)
+                            <span class="text-xs text-zinc-500">{{ $record->comments_count }}</span>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
     @endif
