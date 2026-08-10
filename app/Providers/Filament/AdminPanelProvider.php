@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\FeaturesWidget;
 use App\Filament\Widgets\KanbanLinkWidget;
 use Asmit\AdvancedKanban\KanbanBuilder;
+use Asmit\AdvancedKanban\RenderHooks\KanbanRenderHook;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -75,6 +76,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): string => view('filament.hooks.clarity'),
+            )
+            ->renderHook(
+                KanbanRenderHook::KANBAN_PAGE_FOOTER,
+                fn (): string => view('filament.kanban.page-footer'),
             )
             ->viteTheme('resources/css/filament/admin/theme.css');
     }

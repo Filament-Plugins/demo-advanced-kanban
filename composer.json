@@ -7,8 +7,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "asmit/advanced-kanban": "^1.4",
-        "filament/filament": "^5.0",
+        "asmit/advanced-kanban": "^2.0",
+        "filament/filament": "^5.7",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
@@ -89,8 +89,9 @@
     "prefer-stable": true,
     "repositories": [
         {
+            "name": "asmit",
             "type": "composer",
-            "url": "https://filament-advanced-kanban.composer.sh"
+            "url": "https://asmit-nepali.privato.pub/composer"
         }
     ]
 }

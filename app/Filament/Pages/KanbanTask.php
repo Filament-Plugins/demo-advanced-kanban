@@ -13,12 +13,24 @@ use Asmit\AdvancedKanban\Kanban;
 use Asmit\AdvancedKanban\Pages\KanbanPage;
 use Asmit\AdvancedKanban\RecordAction\DeleteAction;
 use Asmit\AdvancedKanban\RecordAction\EditAction;
+use Asmit\AdvancedKanban\RecordAction\MoveToTopAction;
+use Asmit\AdvancedKanban\RecordAction\ReplicateAction;
+use Asmit\AdvancedKanban\Support\RecordPosition;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\Size;
+use Filament\Support\Enums\TextSize;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -26,17 +38,33 @@ class KanbanTask extends KanbanPage
 {
     protected ?string $heading = 'Task Kanban';
 
+    protected string $view = 'filament.pages.kanban-task';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
 
     protected static string $columnHeaderComponent = 'kanban.task-resource.column-header';
-
-    protected static string $cardComponent = 'kanban.task-resource.card';
 
     protected static ?string $navigationLabel = 'Tasks';
 
     protected static bool $shouldPersistFilterInSession = true;
 
     protected static bool $shouldPersistSearchInSession = true;
+
+    /**
+     * The status attribute is cast to the TaskStatus enum, but record actions such as
+     * MoveToTopAction read it via getAttribute() and pass it straight through to this
+     * method, which the base class types as a plain string.
+     */
+    public function moveRecord(string|int $recordId, string|BackedEnum $newStatus, string|int|null $previousId = null, string|int|null $nextId = null, ?array $transitionData = null): void
+    {
+        parent::moveRecord(
+            $recordId,
+            $newStatus instanceof BackedEnum ? (string) $newStatus->value : $newStatus,
+            $previousId,
+            $nextId,
+            $transitionData,
+        );
+    }
 
     public function getBreadcrumbs(): array
     {
@@ -46,22 +74,74 @@ class KanbanTask extends KanbanPage
         ];
     }
 
+    /**
+     * Status is already the thing every column sorts by, so a status tab is a filter on
+     * information already on screen. These cut across columns instead — "what needs my
+     * attention" rather than "where does it currently sit."
+     */
     public function getTabs(): array
     {
         return [
-            Tab::make('all')
-                ->label('All')
-                ->icon(Heroicon::OutlinedSquare3Stack3d),
-            Tab::make('pending')
-                ->label('Pending')
-                ->icon(Heroicon::OutlinedClock)
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'pending')),
+            'all' => Tab::make('All work')
+                ->icon(Heroicon::OutlinedSquares2x2)
+                ->badge(fn (): int => $this->countTasks(fn (Builder $query) => $query)),
 
-            Tab::make('in_progress')
-                ->label('In Progress')
-                ->icon(Heroicon::OutlinedArrowPath)
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'in_progress')),
+            'mine' => Tab::make('Assigned to me')
+                ->icon(Heroicon::OutlinedUserCircle)
+                ->badge(fn (): int => $this->countTasks($this->assignedToMe(...)))
+                ->modifyQueryUsing($this->assignedToMe(...)),
+
+            'overdue' => Tab::make('Overdue')
+                ->icon(Heroicon::OutlinedExclamationTriangle)
+                ->badgeColor('danger')
+                ->badge(fn (): int => $this->countTasks($this->overdue(...)))
+                ->modifyQueryUsing($this->overdue(...)),
+
+            'week' => Tab::make('Due this week')
+                ->icon(Heroicon::OutlinedCalendarDays)
+                ->badge(fn (): int => $this->countTasks($this->dueThisWeek(...)))
+                ->modifyQueryUsing($this->dueThisWeek(...)),
         ];
+    }
+
+    /**
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    protected function assignedToMe(Builder $query): Builder
+    {
+        return $query->where('assigned_to', auth()->id());
+    }
+
+    /**
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    protected function overdue(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<', now())
+            ->whereNotIn('status', [TaskStatus::COMPLETED, TaskStatus::ARCHIVED]);
+    }
+
+    /**
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    protected function dueThisWeek(Builder $query): Builder
+    {
+        return $query->whereBetween('due_date', [now()->startOfDay(), now()->addWeek()]);
+    }
+
+    /**
+     * Tab badges count the whole board, not just the paginated head of each column.
+     *
+     * @param  \Closure(Builder<Task>): Builder<Task>  $scope
+     */
+    protected function countTasks(\Closure $scope): int
+    {
+        return $scope(Task::query())->count();
     }
 
     public function kanban(Kanban $kanban): Kanban
@@ -69,8 +149,10 @@ class KanbanTask extends KanbanPage
         return $kanban
             ->model(Task::class)
             ->statusField('status')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->orderBy('created_at', 'desc'))
+            ->orderField('position')
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['assignedTo'])->withCount('comments'))
             ->searchableFields(['title', 'description'])
+            ->recordInfolist($this->cardSchema(...))
             ->enableLoadingIndicator()
             ->enableFilterIndicator()
             ->columns([
@@ -78,41 +160,71 @@ class KanbanTask extends KanbanPage
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedClock)
+                    ->iconColor('gray')
+                    ->extraColumnHeadingClass(['kanban-accent-pending'])
                     ->allowedTransitions(['in_progress', 'archived']),
 
                 KanbanColumn::make('in_progress')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedArrowPath)
+                    ->iconColor('info')
+                    ->extraColumnHeadingClass(['kanban-accent-in-progress'])
                     ->allowedTransitions(['review', 'pending', 'archived']),
 
                 KanbanColumn::make('review')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedEye)
+                    ->iconColor('warning')
+                    ->extraColumnHeadingClass(['kanban-accent-review'])
                     ->allowedTransitions(['completed', 'in_progress', 'archived']),
 
                 KanbanColumn::make('completed')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedCheckCircle)
-                    ->allowedTransitions(['archived', 'pending']),
+                    ->iconColor('success')
+                    ->extraColumnHeadingClass(['kanban-accent-completed'])
+                    ->allowedTransitions(['archived', 'pending'])
+                    ->requiresFormOnEnter([
+                        Textarea::make('completion_note')
+                            ->label('Completion note')
+                            ->placeholder('What was done to complete this task?')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->transitionModalHeading('Mark task as completed')
+                    ->transitionModalDescription('Add a short note before this card moves into Completed.')
+                    ->transitionModalSubmitActionLabel('Complete task')
+                    ->saveTransitionDataUsing(function (Task $record, array $data): void {
+                        $record->description = trim($record->description."\n\n✔ ".$data['completion_note']);
+                    }),
 
                 KanbanColumn::make('archived')
                     ->lockCardUsing(fn (Task $record) => $record->unassigned())
                     ->lockedLabel('Unassigned Tasks')
                     ->icon(Heroicon::OutlinedArchiveBox)
+                    ->iconColor('gray')
+                    ->extraColumnHeadingClass(['kanban-accent-archived'])
                     ->allowedTransitions(['pending']),
             ])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make('edit')
                         ->schema(fn () => $this->taskForm(null)),
+                    MoveToTopAction::make(),
+                    ReplicateAction::make('replicate')
+                        ->icon(Heroicon::OutlinedDocumentDuplicate),
                     DeleteAction::make('delete')
                         ->icon(Heroicon::OutlinedTrash)
                         ->requiresConfirmation()
                         ->color('danger'),
                 ]),
+
+                // The comment action is deliberately absent here: recordActions() renders into the
+                // card's corner, and it belongs inline next to the count it explains. It is part of
+                // the card schema instead — see cardSchema().
             ])
             ->columnHeaderActions([
                 CreateAction::make()
@@ -121,7 +233,34 @@ class KanbanTask extends KanbanPage
                     })
                     ->icon(Heroicon::OutlinedPlus)
                     ->hiddenLabel()
+                    // Grey, not primary: a coloured button at the end of the heading row pulls
+                    // rank over the column's own name, which is the thing being read.
+                    ->color('gray')
                     ->link(),
+
+                ActionGroup::make([
+                    Action::make('columnSummary')
+                        ->label('Column summary')
+                        ->icon(Heroicon::OutlinedChartBar)
+                        ->modalHeading(fn (array $arguments): string => $this->columnLabel($arguments['status'] ?? '').' at a glance')
+                        ->modalWidth(Width::Medium)
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->modalContent(fn (array $arguments) => view('filament.kanban.column-summary', [
+                            'summary' => $this->columnSummary($arguments['status'] ?? ''),
+                        ])),
+
+                    Action::make('sortByDueDate')
+                        ->label('Sort by due date')
+                        ->icon(Heroicon::OutlinedArrowsUpDown)
+                        ->requiresConfirmation()
+                        ->modalDescription('Renumbers this column so the soonest due date sits at the top.')
+                        ->action($this->sortColumnByDueDate(...)),
+                ])
+                    ->label('Column actions')
+                    ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                    ->color('gray')
+                    ->size(Size::Small),
             ])
             ->filterFormSchema([
                 Select::make('project_id')
@@ -156,6 +295,219 @@ class KanbanTask extends KanbanPage
 
                 return $query;
             });
+    }
+
+    /**
+     * The card body, as infolist entries rather than a Blade component.
+     *
+     * The plugin renders this in place of its built-in title/description markup, keeping the
+     * corner actions and the locked indicator around it. Everything a card says about a task is
+     * therefore an entry here, which is also what lets the comment action sit in the footer: the
+     * schema carries the record, so an action inside it resolves the task the same way an action
+     * anywhere else in Filament does.
+     *
+     * @return array<int, \Filament\Schemas\Components\Component>
+     */
+    protected function cardSchema(Task $record): array
+    {
+        $isOverdue = $record->due_date
+            && $record->due_date->isPast()
+            && ! in_array($record->status, [TaskStatus::COMPLETED, TaskStatus::ARCHIVED], true);
+
+        // Every column locks on the same rule, so the badge below can read the record directly.
+        // It has to keep saying the same thing as lockCardUsing() above: the plugin's own locked
+        // pill is hidden in the demo stylesheet, and this badge is what replaces it.
+        $isUnassigned = $record->unassigned();
+
+        return [
+            // The title and the description are the part of the card that opens it. The footer is
+            // left out of the click target so its own action and badges stay clickable.
+            Group::make([
+                TextEntry::make('title')
+                    ->hiddenLabel()
+                    ->weight(FontWeight::SemiBold)
+                    ->size(TextSize::Small)
+                    ->lineClamp(2),
+
+                TextEntry::make('description')
+                    ->hiddenLabel()
+                    ->size(TextSize::ExtraSmall)
+                    ->color('gray')
+                    ->limit(80)
+                    ->lineClamp(2)
+                    ->placeholder(''),
+            ])
+                ->extraAttributes([
+                    'class' => 'kanban-card-body',
+                    'wire:click' => "mountAction('viewAction', { recordId: {$record->getKey()} })",
+                ]),
+
+            Flex::make([
+                Flex::make([
+                    // Both entries take their state directly, the way viewAction() does: the card
+                    // is describing a relationship, and a dotted entry name resolves against the
+                    // schema's state rather than the record's relations.
+                    ImageEntry::make('assignee_avatar')
+                        ->hiddenLabel()
+                        ->circular()
+                        ->imageSize(20)
+                        ->state($record->assignedTo
+                            ? 'https://api.dicebear.com/9.x/adventurer/svg?seed='.urlencode($record->assignedTo->name)
+                            : null)
+                        ->grow(false)
+                        ->visible(! $isUnassigned),
+
+                    TextEntry::make('assignee_entry')
+                        ->hiddenLabel()
+                        ->size(TextSize::ExtraSmall)
+                        ->color('gray')
+                        ->state($record->assignedTo?->name)
+                        ->grow(false)
+                        ->visible(! $isUnassigned),
+
+                    // Takes the assignee's place rather than sitting on a row of its own: it is
+                    // an answer to the same question, and the card has nothing else to say there.
+                    TextEntry::make('locked_entry')
+                        ->hiddenLabel()
+                        ->badge()
+                        ->color('gray')
+                        ->icon(Heroicon::OutlinedLockClosed)
+                        ->state('Unassigned')
+                        ->tooltip('Unassigned cards are locked in place')
+                        ->grow(false)
+                        ->visible($isUnassigned),
+                ])
+                    ->extraAttributes(['class' => 'kanban-card-assignee'])
+                    ->grow(false),
+
+                Flex::make([
+                    // A badge on every priority makes every card shout equally, which reads the
+                    // same as none of them shouting. Only the priority worth interrupting for
+                    // gets one.
+                    TextEntry::make('priority')
+                        ->hiddenLabel()
+                        ->badge()
+                        ->grow(false)
+                        ->visible($record->priority === Priority::HIGH),
+
+                    TextEntry::make('due_date')
+                        ->hiddenLabel()
+                        ->badge()
+                        ->color($isOverdue ? 'danger' : 'gray')
+                        ->icon($isOverdue ? Heroicon::OutlinedExclamationCircle : Heroicon::OutlinedCalendar)
+                        // The year is only worth the width when it isn't the obvious one.
+                        ->formatStateUsing(fn (\Illuminate\Support\Carbon $state): string => $state->format(
+                            $state->isSameYear(now()) ? 'M d' : 'M d, Y',
+                        ))
+                        ->grow(false)
+                        ->placeholder(''),
+
+                    $this->commentAction(),
+
+                    TextEntry::make('comments_count')
+                        ->hiddenLabel()
+                        ->size(TextSize::ExtraSmall)
+                        ->color('gray')
+                        ->grow(false)
+                        ->visible((bool) $record->comments_count),
+                ])
+                    ->extraAttributes(['class' => 'kanban-card-meta'])
+                    ->grow(false),
+            ])
+                ->extraAttributes(['class' => 'kanban-card-footer']),
+        ];
+    }
+
+    /**
+     * Lives in the card schema rather than in recordActions(), so it can sit beside the count.
+     */
+    protected function commentAction(): Action
+    {
+        return Action::make('comment')
+            ->label('Comment')
+            ->icon(Heroicon::OutlinedChatBubbleLeftEllipsis)
+            ->iconButton()
+            ->color('gray')
+            ->size(Size::ExtraSmall)
+            ->modalWidth(Width::Medium)
+            ->modalHeading(fn (Task $record): string => "Comment on \"{$record->title}\"")
+            ->modalSubmitActionLabel('Post')
+            ->schema([
+                Textarea::make('body')
+                    ->hiddenLabel()
+                    ->placeholder('Leave a note on this card…')
+                    ->rows(3)
+                    ->required(),
+            ])
+            ->action(function (array $data, Task $record): void {
+                $record->comments()->create([
+                    'user_id' => auth()->id(),
+                    'body' => $data['body'],
+                ]);
+
+                Notification::make()
+                    ->title('Comment posted')
+                    ->body($record->title)
+                    ->success()
+                    ->send();
+
+                $this->loadKanbanRecords();
+            });
+    }
+
+    protected function columnLabel(string $status): string
+    {
+        $columns = $this->getKanban()->getCachedMountedKanbanColumns();
+
+        return ($columns[$status] ?? null)?->getLabel() ?? $status;
+    }
+
+    /**
+     * @return array{total: int, overdue: int, unassigned: int, priorities: array<string, int>}
+     */
+    protected function columnSummary(string $status): array
+    {
+        $tasks = $this->getKanban()->getQuery()->where('status', $status)->get();
+
+        return [
+            'total' => $tasks->count(),
+            'overdue' => $tasks->filter(fn (Task $task): bool => $task->due_date
+                && $task->due_date->isPast()
+                && ! in_array($task->status, [TaskStatus::COMPLETED, TaskStatus::ARCHIVED], true))->count(),
+            'unassigned' => $tasks->whereNull('assigned_to')->count(),
+            'priorities' => collect(Priority::cases())
+                ->mapWithKeys(fn (Priority $priority): array => [
+                    $priority->value => $tasks->where('priority', $priority)->count(),
+                ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    protected function sortColumnByDueDate(array $arguments): void
+    {
+        $status = $arguments['status'] ?? null;
+
+        if (blank($status)) {
+            return;
+        }
+
+        Task::query()
+            ->where('status', $status)
+            ->orderByRaw('due_date is null, due_date')
+            ->get()
+            ->each(fn (Task $task, int $index) => $task->update([
+                'position' => ($index + 1) * RecordPosition::GAP,
+            ]));
+
+        $this->loadKanbanRecords();
+
+        Notification::make()
+            ->title($this->columnLabel($status).' sorted by due date')
+            ->success()
+            ->send();
     }
 
     public function taskForm($status): array
@@ -203,33 +555,42 @@ class KanbanTask extends KanbanPage
             ->modalSubmitAction(false)
             ->schema(function ($record) {
                 return [
-                    TextEntry::make('Title')
-                        ->default($record->title),
+                    TextEntry::make('title_entry')
+                        ->label('Title')
+                        ->state($record->title),
 
-                    TextEntry::make('Description')
-                        ->default($record->description),
+                    TextEntry::make('description_entry')
+                        ->label('Description')
+                        ->state($record->description),
 
                     TextEntry::make('status')
                         ->badge()
                         ->icon($record->status->getIcon())
                         ->color($record->status->getColor())
-                        ->default($record->status->getLabel()),
+                        ->state($record->status->getLabel()),
 
                     TextEntry::make('priority')
                         ->badge()
                         ->icon($record->priority->getIcon())
                         ->color($record->priority->getColor())
-                        ->default($record->priority->getLabel()),
+                        ->state($record->priority->getLabel()),
 
-                    TextEntry::make('Project')
-                        ->default($record->project->name),
+                    // Named to avoid colliding with the project() relation: PHP resolves method
+                    // names case-insensitively, so a plain 'Project' entry would have Eloquent
+                    // match project() and hand back the whole model as state instead of a string,
+                    // leaving ->default() (a blank-state fallback, never reached here) unused.
+                    TextEntry::make('project_entry')
+                        ->label('Project')
+                        ->state($record->project->name),
 
-                    TextEntry::make('Assigned To')
+                    TextEntry::make('assignee_entry')
+                        ->label('Assigned To')
                         ->badge()
-                        ->default($record->assignedTo?->name ?? 'Unassigned'),
+                        ->state($record->assignedTo?->name ?? 'Unassigned'),
 
-                    TextEntry::make('due_date')
-                        ->default($record->due_date?->toFormattedDateString() ?? 'No due date'),
+                    TextEntry::make('due_date_entry')
+                        ->label('Due date')
+                        ->state($record->due_date?->toFormattedDateString() ?? 'No due date'),
 
                 ];
             });

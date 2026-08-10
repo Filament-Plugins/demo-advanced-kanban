@@ -1,20 +1,20 @@
 @php
     use Filament\Support\Enums\IconSize;
 
-    $iconColors = match ($color) {
-        'primary' => 'text-primary-600 dark:text-primary-400',
-        'success' => 'text-success-600 dark:text-success-400',
-        'info' => 'text-info-600 dark:text-info-400',
-        'warning' => 'text-warning-600 dark:text-warning-400',
-        'danger' => 'text-danger-600 dark:text-danger-400',
-        'purple' => 'text-purple-600 dark:text-purple-400',
-        'indigo' => 'text-indigo-600 dark:text-indigo-400',
-        'teal' => 'text-teal-600 dark:text-teal-400',
-        'cyan' => 'text-cyan-600 dark:text-cyan-400',
-        'rose' => 'text-rose-600 dark:text-rose-400',
-        'amber' => 'text-amber-600 dark:text-amber-400',
-        'gray' => 'text-gray-600 dark:text-gray-400',
-        default => 'text-primary-600 dark:text-primary-400',
+    $iconStyles = match ($color) {
+        'primary' => 'bg-primary-500/10 text-primary-600 dark:text-primary-400',
+        'success' => 'bg-success-500/10 text-success-600 dark:text-success-400',
+        'info' => 'bg-info-500/10 text-info-600 dark:text-info-400',
+        'warning' => 'bg-warning-500/10 text-warning-600 dark:text-warning-400',
+        'danger' => 'bg-danger-500/10 text-danger-600 dark:text-danger-400',
+        'purple' => 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+        'indigo' => 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+        'teal' => 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
+        'cyan' => 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+        'rose' => 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+        'amber' => 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+        'gray' => 'bg-gray-500/10 text-gray-600 dark:text-gray-400',
+        default => 'bg-primary-500/10 text-primary-600 dark:text-primary-400',
     };
 @endphp
 
@@ -25,13 +25,10 @@
     'color' => 'primary',
 ])
 
-<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 transition-all duration-150 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm">
-    <div class="flex items-start gap-3">
-        <x-filament::icon :icon="$icon" :size="IconSize::Small" class="h-5 w-5 flex-shrink-0 mt-0.5 {{ $iconColors }}" />
-        <div class="flex-1 min-w-0">
-            <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">{{ $title }}</h3>
-            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{{ $description }}</p>
-        </div>
+<div class="ak-feature-card group border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.03] hover:border-gray-300 dark:hover:border-white/20">
+    <div class="ak-feature-icon {{ $iconStyles }} mb-3 transition-transform duration-200 group-hover:scale-110">
+        <x-filament::icon :icon="$icon" :size="IconSize::Large" class="h-5 w-5" />
     </div>
+    <h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $title }}</h3>
+    <p class="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{{ $description }}</p>
 </div>
-

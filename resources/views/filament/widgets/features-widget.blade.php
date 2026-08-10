@@ -1,102 +1,124 @@
 @php
     use Filament\Support\Icons\Heroicon;
 
+    $newInV2 = [
+        [
+            'icon' => Heroicon::OutlinedDocumentDuplicate,
+            'title' => 'Replicate Action',
+            'description' => 'Duplicate a card into the same column in one click',
+        ],
+        [
+            'icon' => Heroicon::OutlinedArrowUp,
+            'title' => 'Move to Top',
+            'description' => 'Send a card to the front of its column instantly',
+        ],
+        [
+            'icon' => Heroicon::OutlinedChatBubbleBottomCenterText,
+            'title' => 'Transition Modals',
+            'description' => 'Collect data in a modal before a card enters a column',
+        ],
+        [
+            'icon' => Heroicon::OutlinedCubeTransparent,
+            'title' => 'Embeddable Boards',
+            'description' => 'Render a board anywhere with a single view component',
+        ],
+    ];
+
     $features = [
         [
             'icon' => Heroicon::OutlinedArrowsPointingOut,
             'title' => 'Drag & Drop',
             'description' => 'Intuitive drag-and-drop interface for moving records',
-            'color' => 'primary',
         ],
         [
             'icon' => Heroicon::OutlinedArrowPath,
             'title' => 'Workflow',
             'description' => 'Define allowed status transitions to control movement',
-            'color' => 'success',
         ],
         [
             'icon' => Heroicon::OutlinedMagnifyingGlass,
             'title' => 'Real-time Search',
             'description' => 'Search across multiple fields with debounced input',
-            'color' => 'info',
         ],
         [
             'icon' => Heroicon::OutlinedFunnel,
             'title' => 'Advanced Filtering',
             'description' => 'Custom filter forms with multiple field types',
-            'color' => 'warning',
         ],
         [
             'icon' => Heroicon::OutlinedChevronDoubleDown,
             'title' => 'Infinite Scroll',
             'description' => 'Load more records per column with infinite scroll',
-            'color' => 'gray',
         ],
         [
             'icon' => Heroicon::OutlinedSquare3Stack3d,
             'title' => 'Custom Components',
             'description' => 'Rich, customizable card and column components',
-            'color' => 'purple',
         ],
         [
             'icon' => Heroicon::OutlinedLockClosed,
             'title' => 'Card Locking',
             'description' => 'Prevent specific cards from being moved based on conditions',
-            'color' => 'danger',
         ],
         [
             'icon' => Heroicon::OutlinedBookmark,
             'title' => 'Session Persistence',
             'description' => 'Filters and search automatically saved in session',
-            'color' => 'indigo',
         ],
         [
             'icon' => Heroicon::OutlinedSquare3Stack3d,
             'title' => 'Tab Filtering',
             'description' => 'Filter records by status using intuitive tab navigation',
-            'color' => 'teal',
         ],
         [
             'icon' => Heroicon::OutlinedPlusCircle,
             'title' => 'Header Actions',
             'description' => 'Add new records directly from column headers quickly',
-            'color' => 'cyan',
         ],
         [
             'icon' => Heroicon::OutlinedEllipsisVertical,
             'title' => 'Record Actions',
             'description' => 'Edit, delete, and view actions on individual cards',
-            'color' => 'rose',
         ],
         [
             'icon' => Heroicon::OutlinedCog6Tooth,
             'title' => 'Query Modifiers',
             'description' => 'Fine-tune search queries with advanced filtering options',
-            'color' => 'amber',
         ],
     ];
 @endphp
 
 <x-filament-widgets::widget>
-    <x-filament::section>
-        <x-slot name="heading">
-            Advanced Kanban Features
-        </x-slot>
+    <div class="mb-4 flex items-center gap-2">
+        <h2 class="text-lg font-semibold text-gray-950 dark:text-white">New in v2</h2>
+        <x-filament::badge color="primary" size="sm">Try it on the board</x-filament::badge>
+    </div>
 
-        <x-slot name="description">
-            Explore the powerful capabilities of Advanced Kanban for Filament 4.x
-        </x-slot>
+    <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        @foreach ($newInV2 as $feature)
+            <x-feature-card
+                :icon="$feature['icon']"
+                :title="$feature['title']"
+                :description="$feature['description']"
+                color="primary"
+            />
+        @endforeach
+    </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            @foreach ($features as $feature)
-                <x-feature-card
-                    :icon="$feature['icon']"
-                    :title="$feature['title']"
-                    :description="$feature['description']"
-                    :color="$feature['color']"
-                />
-            @endforeach
-        </div>
-    </x-filament::section>
+    <div class="mb-4">
+        <h2 class="text-lg font-semibold text-gray-950 dark:text-white">Everything you need, out of the box</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Every card below is a live feature &mdash; try it on the board.</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        @foreach ($features as $feature)
+            <x-feature-card
+                :icon="$feature['icon']"
+                :title="$feature['title']"
+                :description="$feature['description']"
+                color="gray"
+            />
+        @endforeach
+    </div>
 </x-filament-widgets::widget>
 

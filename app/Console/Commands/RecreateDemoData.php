@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\Priority;
 use App\Enums\TaskStatus;
+use App\Models\Comment;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -48,10 +49,11 @@ class RecreateDemoData extends Command
 
         Schema::enableForeignKeyConstraints();
 
-        // Ensure users exist (deterministic, no Faker)
-        if (User::query()->count() === 0) {
-            $this->seedUsers();
-        }
+        // Ensure users exist (deterministic, no Faker). Kanban Admin survives every reset since
+        // it is excluded above, so a count-based guard never fires again once it exists — leaving
+        // the rest of the cast missing forever. Upserting by email keeps the full roster present
+        // on every run instead.
+        $this->seedUsers();
 
         // Create deterministic projects
         $projects = $this->seedProjects();
@@ -61,6 +63,7 @@ class RecreateDemoData extends Command
 
         $this->components->twoColumnDetail('Demo data recreation', '<info>DONE</info>');
         Cache::forget('demo_reset_in_progress');
+
         return self::SUCCESS;
     }
 
@@ -77,11 +80,13 @@ class RecreateDemoData extends Command
             ];
 
             foreach ($users as $userData) {
-                User::query()->create([
-                    'name' => $userData['name'],
-                    'email' => $userData['email'],
-                    'password' => Hash::make($userData['password']),
-                ]);
+                User::query()->firstOrCreate(
+                    ['email' => $userData['email']],
+                    [
+                        'name' => $userData['name'],
+                        'password' => Hash::make($userData['password']),
+                    ],
+                );
             }
         });
     }
@@ -141,6 +146,15 @@ class RecreateDemoData extends Command
             $verbs = ['Implement', 'Fix', 'Design', 'Refactor', 'Document', 'Integrate', 'Research', 'Review'];
             $areas = ['authentication', 'API endpoint', 'database schema', 'UI components', 'notifications', 'webhooks', 'background jobs', 'validation rules', 'error handling', 'access control'];
 
+            $comments = [
+                'Kicked this off — should be quick.',
+                'Blocked on the API contract, following up.',
+                'Looks good, just needs a second pair of eyes.',
+                'Reproduced locally, digging into the root cause now.',
+                'Left some notes in the PR, nothing blocking.',
+                'Can we push the due date? Waiting on design.',
+            ];
+
             $users = User::query()->orderBy('id')->pluck('id')->all();
             $userCount = count($users);
 
@@ -152,7 +166,7 @@ class RecreateDemoData extends Command
                         // Title based on deterministic combination
                         $titleVerb = $verbs[$globalIndex % count($verbs)];
                         $titleArea = $areas[$globalIndex % count($areas)];
-                        $title = $titleVerb . ' ' . $titleArea;
+                        $title = $titleVerb.' '.$titleArea;
 
                         // Priority pattern similar to original
                         $priority = match ($status) {
@@ -179,23 +193,32 @@ class RecreateDemoData extends Command
                             }
                         }
 
-                        $description = 'Task for ' . $project->name . ' focusing on ' . $titleArea . '. '
-                            . 'Status: ' . $status->value . ', Priority: ' . $priority->value . '.';
+                        $description = 'Task for '.$project->name.' focusing on '.$titleArea.'. '
+                            .'Status: '.$status->value.', Priority: '.$priority->value.'.';
 
-                        Task::query()->create([
+                        $task = Task::query()->create([
                             'project_id' => $project->id,
                             'status' => $status->value,
+                            'position' => $i + 1.0,
                             'priority' => $priority->value,
                             'due_date' => $dueDate->format('Y-m-d'),
                             'assigned_to' => $assignedTo,
                             'title' => $title,
                             'description' => $description,
                         ]);
+
+                        // Roughly a quarter of cards arrive with a comment already on them, so the
+                        // board doesn't read as freshly unboxed on first load.
+                        if ($userCount > 0 && $globalIndex % 4 === 0) {
+                            Comment::query()->create([
+                                'task_id' => $task->id,
+                                'user_id' => $users[($globalIndex + 1) % $userCount],
+                                'body' => $comments[$globalIndex % count($comments)],
+                            ]);
+                        }
                     }
                 }
             }
         });
     }
 }
-
-

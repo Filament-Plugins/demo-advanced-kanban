@@ -2,3 +2,601 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/**/*';
+
+/* ---------- Premium demo hero ---------- */
+.ak-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, #18181b 0%, #27180a 55%, #3a2308 100%);
+    box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+.ak-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+.ak-hero-glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.ak-hero-glow-a {
+    top: -6rem;
+    right: -4rem;
+    height: 20rem;
+    width: 20rem;
+    background: radial-gradient(circle, var(--primary-500, #f59e0b) 0%, transparent 70%);
+}
+
+.ak-hero-glow-b {
+    bottom: -8rem;
+    left: -6rem;
+    height: 18rem;
+    width: 18rem;
+    background: radial-gradient(circle, var(--primary-700, #b45309) 0%, transparent 70%);
+    opacity: 0.25;
+}
+
+.ak-hero-cta-primary {
+    box-shadow: 0 10px 30px -8px var(--primary-500, #f59e0b);
+}
+
+.ak-hero-cta-secondary {
+    --c-50: 255 255 255;
+    --c-400: 255 255 255;
+    --c-500: 255 255 255;
+    --c-600: 255 255 255;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ak-hero-cta-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ---------- Premium feature cards ---------- */
+.ak-feature-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ak-feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.25);
+}
+
+.ak-feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 0.75rem;
+}
+
+/*
+ * Task Kanban demo board.
+ *
+ * The plugin's own stylesheet is loaded at runtime by x-load-css, so it lands after this file
+ * and would win on equal specificity. Everything below is a selector more specific, and the
+ * `.kanban-demo` the page view puts on its wrapper keeps it off every other board (the resource
+ * relation-manager board on a project's page renders its own, unrelated, `.kanban-panel`).
+ *
+ * The scope is `body:has()` rather than a descendant of `.kanban-demo` on purpose. Sortable runs
+ * with `fallbackOnBody`, so the card you are dragging is moved to <body> — outside the page
+ * wrapper. Scoped to the wrapper, every rule below would stop matching the moment a drag began
+ * and the card would visibly change shape in your hand.
+ */
+
+body:has(.kanban-demo) {
+    /* Set per column below; the shared rules read these rather than repeating each value. */
+    --kanban-accent: var(--gray-400);
+
+    --kanban-hairline: color-mix(in oklab, var(--gray-950) 8%, transparent);
+    --kanban-hairline-strong: color-mix(in oklab, var(--gray-950) 14%, transparent);
+    --kanban-panel-top: color-mix(in oklab, var(--gray-100) 90%, white);
+    --kanban-panel-bottom: color-mix(in oklab, var(--gray-100) 70%, white);
+    --kanban-card-surface: white;
+    --kanban-radius: 0.875rem;
+}
+
+.dark body:has(.kanban-demo) {
+    --kanban-hairline: rgb(255 255 255 / 8%);
+    --kanban-hairline-strong: rgb(255 255 255 / 14%);
+    --kanban-panel-top: color-mix(in oklab, var(--gray-900) 85%, transparent);
+    --kanban-panel-bottom: color-mix(in oklab, var(--gray-900) 55%, transparent);
+    --kanban-card-surface: color-mix(in oklab, var(--gray-800) 92%, transparent);
+}
+
+/* Each column owns its accent. The heading row and the column body are separate DOM subtrees, so
+   both have to be named: the heading carries a class from `extraColumnHeadingClass()`, the body
+   carries the plugin's own `data-status`. Setting it on the body is what lets the cards inside
+   inherit it for their accent rail. */
+body:has(.kanban-demo) .kanban-accent-pending,
+body:has(.kanban-demo) .kanban-column[data-status='pending'] { --kanban-accent: var(--gray-400); }
+
+body:has(.kanban-demo) .kanban-accent-in-progress,
+body:has(.kanban-demo) .kanban-column[data-status='in_progress'] { --kanban-accent: var(--info-500); }
+
+body:has(.kanban-demo) .kanban-accent-review,
+body:has(.kanban-demo) .kanban-column[data-status='review'] { --kanban-accent: var(--warning-500); }
+
+body:has(.kanban-demo) .kanban-accent-completed,
+body:has(.kanban-demo) .kanban-column[data-status='completed'] { --kanban-accent: var(--success-500); }
+
+body:has(.kanban-demo) .kanban-accent-archived,
+body:has(.kanban-demo) .kanban-column[data-status='archived'] { --kanban-accent: var(--gray-500); }
+
+/* Board chrome ------------------------------------------------------------ */
+
+/* The plugin frames the board in a 4px page-coloured border plus a ring. Two edges that close
+   together read as a seam; one hairline and a soft shadow read as a surface. */
+body:has(.kanban-demo) .kanban-container {
+    border: 0;
+    border-radius: 1.25rem;
+    padding: 0.25rem 0.25rem 0;
+    background:
+        radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary-500) 6%, transparent) 0%, transparent 60%),
+        white;
+    box-shadow:
+        0 0 0 1px var(--kanban-hairline),
+        0 18px 40px -28px color-mix(in oklab, var(--gray-950) 45%, transparent);
+}
+
+.dark body:has(.kanban-demo) .kanban-container {
+    background:
+        radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary-500) 8%, transparent) 0%, transparent 60%),
+        color-mix(in oklab, var(--gray-950) 60%, transparent);
+    box-shadow:
+        0 0 0 1px var(--kanban-hairline),
+        0 18px 40px -28px rgb(0 0 0 / 60%);
+}
+
+/* Columns are their own panels now, so the board only needs to breathe between them. */
+body:has(.kanban-demo) .kanban-board,
+body:has(.kanban-demo) .kanban-header {
+    gap: 0.75rem;
+}
+
+body:has(.kanban-demo) .kanban-grid > * {
+    min-width: 340px;
+    max-width: 340px;
+}
+
+/* Column panels ----------------------------------------------------------- */
+
+/* `::after` is the plugin's panel behind the heading label, and it is left neutral. Five saturated
+   bars along the top of the board read as a colour scheme rather than as information — the column
+   already says which one it is, twice, in its icon and its name. The accent is spent on the one
+   place it answers a question the eye is actually asking: which column a card belongs to, on the
+   card, where a card in flight is about to land somewhere else. */
+body:has(.kanban-demo) .kanban-header-column::after {
+    border: 1px solid var(--kanban-hairline);
+    border-bottom: 0;
+    border-radius: var(--kanban-radius) var(--kanban-radius) 0 0;
+    background-image: linear-gradient(to bottom, var(--kanban-panel-top), var(--kanban-panel-top));
+    background-color: transparent;
+    border-bottom: 1px solid var(--kanban-hairline);
+}
+
+/* The heading sticks while the column scrolls. Once cards are passing underneath it, the hairline
+   it already has is not enough to sit it above them. */
+body:has(.kanban-demo) .kanban-header-column.show-border::after {
+    box-shadow: 0 10px 18px -14px color-mix(in oklab, var(--gray-950) 55%, transparent);
+}
+
+body:has(.kanban-demo) .kanban-header-column {
+    padding: 0.75rem 0.75rem 0.625rem;
+}
+
+/* The container's top padding is what stops the heading panel reading as part of the board's own
+   top edge. `::before` is the strip the plugin paints over that gap so cards can't show through it
+   once the column scrolls, and it is page-coloured — correct when the board was a page-coloured
+   frame, wrong now that the board is its own surface. Repaint it to match. */
+body:has(.kanban-demo) .kanban-header-column::before {
+    background-color: white;
+}
+
+.dark body:has(.kanban-demo) .kanban-header-column::before {
+    background-color: color-mix(in oklab, var(--gray-950) 60%, var(--gray-950));
+}
+
+body:has(.kanban-demo) .kanban-column {
+    border: 1px solid var(--kanban-hairline);
+    border-top: 0;
+    border-radius: 0 0 var(--kanban-radius) var(--kanban-radius);
+    background-image: linear-gradient(to bottom, var(--kanban-panel-bottom), var(--kanban-panel-bottom));
+    background-color: transparent;
+}
+
+body:has(.kanban-demo) .kanban-column-content {
+    padding-inline: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--kanban-hairline-strong) transparent;
+}
+
+body:has(.kanban-demo) .kanban-column-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+body:has(.kanban-demo) .kanban-column-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+body:has(.kanban-demo) .kanban-column-content::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--kanban-hairline-strong);
+}
+
+/* Column heading ---------------------------------------------------------- */
+
+/* The name is the thing being read on this row, so it carries the weight and the contrast. The
+   icon and the count are labels on it, and stay a step back. */
+body:has(.kanban-demo) .kanban-column-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    color: var(--gray-700);
+}
+
+.dark body:has(.kanban-demo) .kanban-column-title {
+    color: var(--gray-200);
+}
+
+body:has(.kanban-demo) .kanban-column-icon {
+    height: 0.875rem;
+    width: 0.875rem;
+    opacity: 0.9;
+}
+
+/* The count is a quantity, not a status — a neutral pill keeps the accent meaning one thing. */
+body:has(.kanban-demo) .kanban-column-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    padding: 0 0.3125rem;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--gray-950) 6%, transparent);
+    color: var(--gray-500);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.125rem;
+}
+
+.dark body:has(.kanban-demo) .kanban-column-count {
+    background: rgb(255 255 255 / 8%);
+    color: var(--gray-400);
+}
+
+/* Same reasoning as the card corner actions: present, but not competing with the label. */
+body:has(.kanban-demo) .kanban-header-column .fi-icon-btn,
+body:has(.kanban-demo) .kanban-header-column .fi-link {
+    opacity: 0.5;
+    transition: opacity 150ms ease;
+}
+
+body:has(.kanban-demo) .kanban-header-column:hover .fi-icon-btn,
+body:has(.kanban-demo) .kanban-header-column:hover .fi-link,
+body:has(.kanban-demo) .kanban-header-column:focus-within .fi-icon-btn,
+body:has(.kanban-demo) .kanban-header-column:focus-within .fi-link {
+    opacity: 1;
+}
+
+/* Cards ------------------------------------------------------------------- */
+
+/* `transform` is deliberately not transitioned here. Sortable owns that property: it positions
+   the dragged card by writing `translate3d()` to it on every pointer move, and reorders the rest
+   of the column the same way. Animating it makes the card trail the cursor — which is also why
+   the hover state is built from shadow and colour rather than a lift. */
+body:has(.kanban-demo) .kanban-item {
+    --kanban-card-shadow:
+        0 1px 2px 0 color-mix(in oklab, var(--gray-950) 6%, transparent),
+        0 1px 1px -0.5px color-mix(in oklab, var(--gray-950) 4%, transparent);
+    --kanban-card-shadow-hover:
+        0 2px 4px -1px color-mix(in oklab, var(--gray-950) 8%, transparent),
+        0 10px 20px -8px color-mix(in oklab, var(--gray-950) 18%, transparent);
+
+    position: relative;
+    margin-bottom: 0.5rem;
+    padding: 0.8125rem 0.875rem 0.75rem 1.125rem;
+    border-radius: 0.75rem;
+    background-color: var(--kanban-card-surface);
+    outline: 1px solid var(--kanban-hairline);
+    outline-offset: 0;
+    transition:
+        box-shadow 150ms ease,
+        background-color 150ms ease,
+        outline-color 150ms ease;
+}
+
+/* The rail is the only place a card states which column it belongs to. It matters most while a
+   card is in flight over a different column, so it is quiet at rest and full strength on hover. */
+body:has(.kanban-demo) .kanban-item::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.6875rem;
+    left: 0.4375rem;
+    width: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(
+        to bottom,
+        var(--kanban-accent),
+        color-mix(in oklab, var(--kanban-accent) 55%, transparent)
+    );
+    opacity: 0.55;
+    transition: opacity 150ms ease;
+}
+
+body:has(.kanban-demo) .kanban-item:hover::before {
+    opacity: 1;
+}
+
+body:has(.kanban-demo) .kanban-item:hover {
+    outline-color: var(--kanban-hairline-strong);
+}
+
+/* Tailwind builds `ring` out of box-shadow, and the plugin rings both the card being dragged and
+   the gap it would land in. Setting box-shadow replaces the whole property, so it is kept off any
+   card that is mid-drag rather than painting over those rings. */
+body:has(.kanban-demo) .kanban-item:not(.drag-follow, .sortable-chosen, .sortable-drag, .sortable-ghost) {
+    box-shadow: var(--kanban-card-shadow);
+}
+
+body:has(.kanban-demo) .kanban-item:not(.drag-follow, .sortable-chosen, .sortable-drag, .sortable-ghost):hover {
+    box-shadow: var(--kanban-card-shadow-hover);
+}
+
+/* Nothing should animate while a drag is in flight — not the card being dragged, and not the
+   cards shuffling out of its way. */
+body:has(.kanban-item.sortable-chosen) .kanban-item,
+.kanban-item.drag-follow,
+.kanban-item.sortable-chosen,
+.kanban-item.sortable-drag,
+.kanban-item.sortable-ghost {
+    transition: none;
+}
+
+/* Dark cards sit on a dark column; an outline carries the edge and a drop shadow only muddies it. */
+.dark body:has(.kanban-demo) .kanban-item {
+    --kanban-card-shadow: none;
+    --kanban-card-shadow-hover: none;
+}
+
+.dark body:has(.kanban-demo) .kanban-item:hover {
+    background-color: color-mix(in oklab, var(--gray-700) 60%, transparent);
+    outline-color: var(--kanban-hairline-strong);
+}
+
+/* Card schema ------------------------------------------------------------- */
+
+/* The body is built from `recordInfolist()` entries, so the card's layout is Filament's schema
+   markup rather than markup of our own: a `Schema` of a `Group` (title + description) and a `Flex`
+   (the footer). What is left to do here is the spacing — a schema is spaced for a form or a
+   detail pane, and a card is neither. */
+body:has(.kanban-demo) .kanban-item-infolist {
+    flex: 1;
+    min-width: 0;
+}
+
+body:has(.kanban-demo) .kanban-item-infolist .fi-sc,
+body:has(.kanban-demo) .kanban-item-infolist .fi-sc-flex {
+    gap: 0.5rem;
+}
+
+body:has(.kanban-demo) .kanban-card-body {
+    display: grid;
+    gap: 0.25rem;
+}
+
+body:has(.kanban-demo) .kanban-card-body .fi-in-text {
+    line-height: 1.4;
+}
+
+/* Entry text is sized for a detail pane. On a card the title has to stay the loudest thing while
+   still being small, so both ends of the scale come in a step. */
+body:has(.kanban-demo) .kanban-card-body .fi-size-sm {
+    font-size: 0.8125rem;
+    letter-spacing: -0.006em;
+}
+
+body:has(.kanban-demo) .kanban-card-body .fi-size-xs {
+    font-size: 0.75rem;
+}
+
+body:has(.kanban-demo) .kanban-card-footer,
+body:has(.kanban-demo) .kanban-card-assignee,
+body:has(.kanban-demo) .kanban-card-meta {
+    align-items: center;
+}
+
+body:has(.kanban-demo) .kanban-card-footer {
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+body:has(.kanban-demo) .kanban-card-assignee,
+body:has(.kanban-demo) .kanban-card-meta {
+    gap: 0.375rem;
+}
+
+/* Flex puts every child in a wrapper div of its own, so the two halves of the footer are sized
+   through those wrappers rather than through the classes above. The name is the only thing here
+   that can afford to lose width; the badges are already as short as they go. (Both halves are
+   `grow(false)` in the schema — a growable child is given `width: 100%`, and the second half of a
+   two-child row at full width leaves the first with nothing.) */
+body:has(.kanban-demo) .kanban-card-footer > div:first-child {
+    min-width: 0;
+}
+
+body:has(.kanban-demo) .kanban-card-footer > div:last-child {
+    flex: 0 0 auto;
+}
+
+body:has(.kanban-demo) .kanban-card-meta {
+    font-variant-numeric: tabular-nums;
+}
+
+body:has(.kanban-demo) .kanban-card-assignee > div:last-child,
+body:has(.kanban-demo) .kanban-card-assignee .fi-in-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body:has(.kanban-demo) .kanban-card-meta .fi-badge {
+    white-space: nowrap;
+}
+
+/* The comment button is a footer control, not a card action: no button chrome, just the icon
+   sitting next to the count it opens. */
+body:has(.kanban-demo) .kanban-card-meta .fi-icon-btn {
+    padding: 0;
+    min-height: 0;
+    min-width: 0;
+    background: none;
+    opacity: 0.5;
+    transition: opacity 150ms ease;
+}
+
+body:has(.kanban-demo) .kanban-item:hover .kanban-card-meta .fi-icon-btn,
+body:has(.kanban-demo) .kanban-card-meta .fi-icon-btn:focus-visible {
+    opacity: 1;
+}
+
+/* The plugin renders its locked pill in a block of its own after the schema, which puts it on a
+   second row under a footer that has an empty left half — the half the pill is the answer to. It
+   cannot be moved from here (nothing in the card's markup shares a flex context with it), so the
+   card schema renders the indicator in the assignee's place instead and this hides the original.
+   The two have to stay in step: see the `$isUnassigned` badge in KanbanTask::cardSchema(). */
+body:has(.kanban-demo) .kanban-item-meta {
+    display: none;
+}
+
+/* The corner actions only need to be legible on hover; before that they should not compete with
+   the card's own content. */
+body:has(.kanban-demo) .kanban-action .fi-icon-btn {
+    opacity: 0.45;
+    transition: opacity 150ms ease;
+}
+
+body:has(.kanban-demo) .kanban-item:hover .kanban-action .fi-icon-btn,
+body:has(.kanban-demo) .kanban-action:focus-within .fi-icon-btn {
+    opacity: 1;
+}
+
+/* A locked card should read as locked at a glance, not only from its badge. */
+body:has(.kanban-demo) .kanban-item.locked {
+    background-image: repeating-linear-gradient(
+        135deg,
+        color-mix(in oklab, var(--gray-950) 3%, transparent) 0,
+        color-mix(in oklab, var(--gray-950) 3%, transparent) 1px,
+        transparent 0,
+        transparent 6px
+    );
+    cursor: default;
+}
+
+body:has(.kanban-demo) .kanban-item.locked::before {
+    opacity: 0.15;
+}
+
+.dark body:has(.kanban-demo) .kanban-item.locked {
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgb(255 255 255 / 5%) 0,
+        rgb(255 255 255 / 5%) 1px,
+        transparent 0,
+        transparent 6px
+    );
+}
+
+/* Drag states ------------------------------------------------------------- */
+
+/* The gap the card would land in. A dashed outline over the column's own surface reads as a slot;
+   the plugin's stacked rings read as a second card. */
+body:has(.kanban-demo) .kanban-item.sortable-ghost {
+    outline: 2px dashed color-mix(in oklab, var(--primary-500) 55%, transparent);
+    outline-offset: -1px;
+    background-color: color-mix(in oklab, var(--primary-500) 6%, transparent);
+    background-image: none;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+body:has(.kanban-demo) .kanban-item.drag-follow,
+body:has(.kanban-demo) .kanban-item.sortable-drag {
+    outline: 1px solid color-mix(in oklab, var(--primary-500) 60%, transparent);
+    box-shadow:
+        0 12px 28px -8px color-mix(in oklab, var(--gray-950) 45%, transparent),
+        0 0 0 4px color-mix(in oklab, var(--primary-500) 14%, transparent);
+    cursor: grabbing;
+}
+
+/* Load more / empty ------------------------------------------------------- */
+
+body:has(.kanban-demo) .kanban-load-more-btn {
+    width: auto;
+    margin: 0.5rem auto 0;
+    padding: 0.3125rem 0.75rem;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--gray-950) 4%, transparent);
+    box-shadow: inset 0 0 0 1px var(--kanban-hairline);
+    color: var(--gray-600);
+    font-size: 0.6875rem;
+}
+
+body:has(.kanban-demo) .kanban-load-more-btn:hover {
+    background: color-mix(in oklab, var(--gray-950) 8%, transparent);
+    color: var(--gray-900);
+}
+
+.dark body:has(.kanban-demo) .kanban-load-more-btn {
+    background: rgb(255 255 255 / 5%);
+    color: var(--gray-400);
+}
+
+.dark body:has(.kanban-demo) .kanban-load-more-btn:hover {
+    background: rgb(255 255 255 / 10%);
+    color: white;
+}
+
+body:has(.kanban-demo) .kanban-empty {
+    margin: 0.25rem;
+    padding: 1.5rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px dashed var(--kanban-hairline-strong);
+}
+
+body:has(.kanban-demo) .kanban-empty svg {
+    height: 4rem;
+    width: 4rem;
+}
+
+/* The minimap floats over the board, so it needs the same panel treatment as everything else. */
+body:has(.kanban-demo) .minimap-wrapper {
+    border-radius: 0.625rem;
+    background: color-mix(in oklab, var(--gray-50) 85%, transparent);
+    box-shadow: 0 0 0 1px var(--kanban-hairline);
+    backdrop-filter: blur(8px);
+}
+
+.dark body:has(.kanban-demo) .minimap-wrapper {
+    background: color-mix(in oklab, var(--gray-900) 80%, transparent);
+}
