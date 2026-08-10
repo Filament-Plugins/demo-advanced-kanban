@@ -421,33 +421,42 @@ class KanbanTask extends KanbanPage
             ->modalSubmitAction(false)
             ->schema(function ($record) {
                 return [
-                    TextEntry::make('Title')
-                        ->default($record->title),
+                    TextEntry::make('title_entry')
+                        ->label('Title')
+                        ->state($record->title),
 
-                    TextEntry::make('Description')
-                        ->default($record->description),
+                    TextEntry::make('description_entry')
+                        ->label('Description')
+                        ->state($record->description),
 
                     TextEntry::make('status')
                         ->badge()
                         ->icon($record->status->getIcon())
                         ->color($record->status->getColor())
-                        ->default($record->status->getLabel()),
+                        ->state($record->status->getLabel()),
 
                     TextEntry::make('priority')
                         ->badge()
                         ->icon($record->priority->getIcon())
                         ->color($record->priority->getColor())
-                        ->default($record->priority->getLabel()),
+                        ->state($record->priority->getLabel()),
 
-                    TextEntry::make('Project')
-                        ->default($record->project->name),
+                    // Named to avoid colliding with the project() relation: PHP resolves method
+                    // names case-insensitively, so a plain 'Project' entry would have Eloquent
+                    // match project() and hand back the whole model as state instead of a string,
+                    // leaving ->default() (a blank-state fallback, never reached here) unused.
+                    TextEntry::make('project_entry')
+                        ->label('Project')
+                        ->state($record->project->name),
 
-                    TextEntry::make('Assigned To')
+                    TextEntry::make('assignee_entry')
+                        ->label('Assigned To')
                         ->badge()
-                        ->default($record->assignedTo?->name ?? 'Unassigned'),
+                        ->state($record->assignedTo?->name ?? 'Unassigned'),
 
-                    TextEntry::make('due_date')
-                        ->default($record->due_date?->toFormattedDateString() ?? 'No due date'),
+                    TextEntry::make('due_date_entry')
+                        ->label('Due date')
+                        ->state($record->due_date?->toFormattedDateString() ?? 'No due date'),
 
                 ];
             });
